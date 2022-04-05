@@ -1,16 +1,12 @@
 %% SNC Group Assignment
 % Dobot control and grasping
 
-<<<<<<< HEAD
+
 % Dobot Control
-=======
+
 
 %% Dobot Control
 
-
-clf
-clear all
->>>>>>> c2e1d0e14d6c3c88aba57bf055f4a3c482e5d935
 close all
 clearvars
 clc
