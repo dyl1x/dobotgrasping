@@ -86,18 +86,18 @@ classdef Dobot < handle
                             q = [q1, q2, q3, q4];
     
                             tr = self.model.fkine(q);
-                            point_cloud(cnt, :) = tr(1:3, 4)'; % ' is to get the inverse
+                            point_cloud(cnt, :) = tr(1:3, 4)'; % ' is to get the transpose
     
                             cnt = cnt + 1;
                             if mod(cnt/size*100, 1) == 0
-                                disp(['After ', num2str(toc), ' seconds, completed ', num2str(cnt / size * 100), '% of poses of Dobot'])
+                                disp(['After ', num2str(toc), ' seconds, completed ', num2str((cnt/size) * 100), '% of poses of Dobot'])
                                 self.volume = point_cloud;
                             end
                         end
                     end
                 end
             end
-
+            figure;
             plot3(point_cloud(:, 1), point_cloud(:, 2), point_cloud(:, 3), 'r.');
 
         end

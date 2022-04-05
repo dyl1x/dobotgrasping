@@ -1,11 +1,8 @@
 %% 
 
 % Dobot Control
-
-
-clf
-clear all
 close all
+clearvars
 clc
 set(0,'DefaultFigureWindowStyle','docked');
 figure('Name','dobot')
@@ -14,7 +11,7 @@ figure('Name','dobot')
 % Set Variables
 
 view(2);
-ws = [-0.5 0.5 -0.5 0.5 0 2];
+ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 
 dobot = Dobot(ws, '1');
 dobot.model.teach
