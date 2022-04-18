@@ -43,7 +43,7 @@ set(0,'DefaultFigureWindowStyle','docked');
 figure('Name','image recognition')
 
 
-img_path = 'working/images/';
+img_path = 'images/';
 
 img1 = rgb2gray(imread( strcat([img_path, 'img1.jpg']) ));
 

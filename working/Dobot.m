@@ -42,7 +42,7 @@ classdef Dobot < handle
         function PlotAndColourRobot(self, workspace)
             for linkIndex = 0:self.model.n
                 disp(strcat(['Model/d', num2str(linkIndex), '.ply']))
-                [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['resources/dobot/d',num2str(linkIndex),'.ply'],'tri');
+                [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../resources/dobot/d',num2str(linkIndex),'.ply'],'tri');
                 self.model.faces{linkIndex+1} = faceData;
                 self.model.points{linkIndex+1} = vertexData;
             end
