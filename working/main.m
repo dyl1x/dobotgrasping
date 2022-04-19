@@ -25,7 +25,16 @@ dobot.model.teach
 % dobot.calc_volume(10);
 % axis equal
 
+%% ros bags
+bag1 = rosbag('bag/boxShort.bag');
 
+depthImages = select(bag1, 'Topic', '/camera/color/image_raw');
+firstDepthImage = readMessages(depthImages, 1);
+d_img = readImage(firstDepthImage{1,1});
+
+img_gray = rgb2gray(d_img);
+figure
+imshow(img_gray)
 
 %% SIFT image recognition
 
@@ -36,18 +45,17 @@ dobot.model.teach
 
 
 clf
-clear all
 close all
 clc
 set(0,'DefaultFigureWindowStyle','docked');
 figure('Name','image recognition')
 
 
-img_path = 'images/';
+% img_path = 'images/';
 
-img1 = rgb2gray(imread( strcat([img_path, 'img1.jpg']) ));
+% img1 = rgb2gray(imread( strcat([img_path, 'img1.jpg']) ));
 
-bw = gray2bw(img1, 0.5);
+bw = gray2bw(img_gray, 0.4);
 
 
 s = regionprops(bw,'centroid');
@@ -163,3 +171,5 @@ end
 imgBW = logical(imgBW);
 
 end
+
+
