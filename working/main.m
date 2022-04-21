@@ -1,10 +1,6 @@
 %% SNC Group Assignment
 % Dobot control and grasping
 
-
-% Dobot Control
-
-
 %% Dobot Control
 
 close all
@@ -17,10 +13,34 @@ figure('Name','dobot')
 % Set Variables
 
 view(2);
-ws = [-0.5 0.5 -0.5 0.5 0 0.8];
+ws = [-0.1 0.5 -0.3 0.3 0 0.4];
+
+[so, co, po, ro] = deal(0.012, 0.013, 0.02, 0.022);
+[ry, gy, by] = deal(-0.05, 0, 0.05);
+
+red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
+green_sphere = Objects('res/shapes/green_sphere.ply', [0.4 gy so], [0 0 0]);
+blue_sphere = Objects('res/shapes/blue_sphere.ply', [0.4 by so], [0 0 0]);
+
+red_cube = Objects('res/shapes/red_cube.ply', [0.45 ry co], [0 0 0]);
+green_cube = Objects('res/shapes/green_cube.ply', [0.45 gy co], [0 0 0]);
+blue_cube = Objects('res/shapes/blue_cube.ply', [0.45 by co], [0 0 0]);
+
+red_pyramid = Objects('res/shapes/red_pyramid.ply', [0.5 ry po], [0 0 0]);
+green_pyramid = Objects('res/shapes/green_pyramid.ply', [0.5 gy po], [0 0 0]);
+blue_pyramid = Objects('res/shapes/blue_pyramid.ply', [0.5 by po], [0 0 0]);
+
+red_rectangle = Objects('res/shapes/red_rectangle.ply', [0.55 ry ro], [0 0 0]);
+green_rectangle = Objects('res/shapes/green_rectangle.ply', [0.55 gy ro], [0 0 0]);
+blue_rectangle = Objects('res/shapes/blue_rectangle.ply', [0.55 by ro], [0 0 0]);
+
+% blue_rectangle.tran([0.1 0 0]);
 
 dobot = Dobot(ws, '1');
 dobot.model.teach
+
+% axis equal
+camlight
 
 % dobot.calc_volume(10);
 % axis equal
@@ -35,6 +55,17 @@ d_img = readImage(firstDepthImage{1,1});
 img_gray = rgb2gray(d_img);
 figure
 imshow(img_gray)
+
+%% Import JPEG images, convert to .mat for image labeller
+
+clc
+close all
+set(0,'DefaultFigureWindowStyle','docked')
+
+image_folder = fullfile()
+imds = imageDatastore(imagefolder)
+
+
 
 %% SIFT image recognition
 
@@ -115,6 +146,28 @@ hold off
 % 
 % showMatchedFeatures(img1, img2, matchedPoints1, matchedPoints2, 'montage');
 
+%% Classifier
+
+net = googlenet;
+
+
+I = imread("peppers.png");
+figure(1);
+imshow(I)
+pause(2);
+
+inputSize = net.Layers(1).InputSize;
+I = imresize(I,inputSize(1:2));
+imshow(I)
+pause(2)
+% Classify and Display Image
+
+% Classify and display the image with the predicted label.
+
+label = classify(net,I);
+figure
+imshow(I)
+title(string(label))
 
 %% Skeleton
 
