@@ -15,24 +15,27 @@ figure('Name','dobot')
 view(2);
 ws = [-0.1 0.5 -0.3 0.3 0 0.4];
 
-[so, co, po, ro] = deal(0.012, 0.013, 0.02, 0.022);
+[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
 [ry, gy, by] = deal(-0.05, 0, 0.05);
 
-red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
-green_sphere = Objects('res/shapes/green_sphere.ply', [0.4 gy so], [0 0 0]);
-blue_sphere = Objects('res/shapes/blue_sphere.ply', [0.4 by so], [0 0 0]);
+uno = Objects('res/obj/arduino_uno.ply', [0.4 ry so], [0 0 0]);
+piz = Objects('res/obj/raspberrypi_zero.ply', [0.4 gy so], [0 0 0]);
 
-red_cube = Objects('res/shapes/red_cube.ply', [0.45 ry co], [0 0 0]);
-green_cube = Objects('res/shapes/green_cube.ply', [0.45 gy co], [0 0 0]);
-blue_cube = Objects('res/shapes/blue_cube.ply', [0.45 by co], [0 0 0]);
-
-red_pyramid = Objects('res/shapes/red_pyramid.ply', [0.5 ry po], [0 0 0]);
-green_pyramid = Objects('res/shapes/green_pyramid.ply', [0.5 gy po], [0 0 0]);
-blue_pyramid = Objects('res/shapes/blue_pyramid.ply', [0.5 by po], [0 0 0]);
-
-red_rectangle = Objects('res/shapes/red_rectangle.ply', [0.55 ry ro], [0 0 0]);
-green_rectangle = Objects('res/shapes/green_rectangle.ply', [0.55 gy ro], [0 0 0]);
-blue_rectangle = Objects('res/shapes/blue_rectangle.ply', [0.55 by ro], [0 0 0]);
+% red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
+% green_sphere = Objects('res/shapes/green_sphere.ply', [0.4 gy so], [0 0 0]);
+% blue_sphere = Objects('res/shapes/blue_sphere.ply', [0.4 by so], [0 0 0]);
+% 
+% red_cube = Objects('res/shapes/red_cube.ply', [0.45 ry co], [0 0 0]);
+% green_cube = Objects('res/shapes/green_cube.ply', [0.45 gy co], [0 0 0]);
+% blue_cube = Objects('res/shapes/blue_cube.ply', [0.45 by co], [0 0 0]);
+% 
+% red_pyramid = Objects('res/shapes/red_pyramid.ply', [0.5 ry po], [0 0 0]);
+% green_pyramid = Objects('res/shapes/green_pyramid.ply', [0.5 gy po], [0 0 0]);
+% blue_pyramid = Objects('res/shapes/blue_pyramid.ply', [0.5 by po], [0 0 0]);
+% 
+% red_rectangle = Objects('res/shapes/red_rectangle.ply', [0.55 ry ro], [0 0 0]);
+% green_rectangle = Objects('res/shapes/green_rectangle.ply', [0.55 gy ro], [0 0 0]);
+% blue_rectangle = Objects('res/shapes/blue_rectangle.ply', [0.55 by ro], [0 0 0]);
 
 % blue_rectangle.tran([0.1 0 0]);
 
