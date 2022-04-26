@@ -7,7 +7,7 @@ clc
 set(0,'DefaultFigureWindowStyle','docked');
 
 
-%% Dobot Control
+%% ROBOT CONTROL : Dobot
 
 close all
 clearvars
@@ -54,7 +54,7 @@ camlight
 % dobot.calc_volume(10);
 % axis equal
 
-%% ros bags
+%% ROS BAGS : Load/Explore
 
 clc
 clear all
@@ -81,13 +81,12 @@ c_img = readImage(firstColourImage{1,1});
 figure(2);
 imshow(uint8(double(c_img/5600*256)));
 
-
 img_gray = rgb2gray(d_img);
 figure(3)
 imshow(img_gray)
 
 
-%% Visualise as point cloud
+%% ROS BAGS : Visualise as point cloud
 close all
 clearvars
 clc
@@ -145,7 +144,18 @@ pcobj = pointCloud(readXYZ(pc_data1{1}),'Color',uint8(255*readRGB(pc_data1{1})))
 % pc1_cart = [x', y', zeros(180, 1)];
 % pointcloud = pointCloud(pc1_cart, 'Color', [ones(180, 1), zeros(180, 1), zeros(180, 1)] );
 
-%% Object Detection in a Cluttered Scene using point feature matching
+%% ROS BAG : Extract Image
+
+filename = '5ObjPCloudColorizer';
+bag = rosbag(strcat(['bag/', filename, '.bag']));
+img_data = select(bag, 'Topic', '/camera/color/image_raw');
+
+firstColourImage = readMessages(img_data, 1);
+img = readImage(firstColourImage{1,1});
+imshow(img)
+imwrite(img, strcat(['working/images/scene_dataset/', filename, '.jpeg']));
+
+%% SIFT SURF Feature Detection : Object Detection in a Cluttered Scene using point feature matching
 
 clc
 clear all
@@ -165,7 +175,7 @@ dtype = 'SURF';
 
 % Step 2: Detect Feature Points
 num_feats = 100;
-if strcmp(dtype, 'SURF')
+if strcmp(dtype, 'SIFT')
     lookupPoints = detectSURFFeatures(lookup_img);
     scenePoints = detectSURFFeatures(scene_img);
 else
@@ -284,11 +294,11 @@ line(newPolygon2(:, 1), newPolygon2(:, 2), 'Color', 'g');
 title('Detected both Polygons');
 
 
-%% Googlenet Model
+%% LOOKUP IMG : Classifier, Googlenet Model
 clear
 clc
 
-Dataset = imageDatastore('working/images/dataset','IncludeSubfolders',true,'LabelSource','foldernames');
+Dataset = imageDatastore('working/images/shape_dataset','IncludeSubfolders',true,'LabelSource','foldernames');
 [train, valid] = splitEachLabel(Dataset, 0.7);
 
 net = googlenet;
@@ -330,8 +340,35 @@ train_options = trainingOptions('sgdm', ...
 net = trainNetwork(resized_train_imgs, new_layer_graph, train_options);
 save("trained_network_1.mat");
 
+% Testing trained network
+
 % test_network(net, 'working/images/lookup/green_cube.jpeg')
 
+% Ypred = classify(net, resized_valid_imgs);
+% Yvalid = resized_valid_imgs.Labels;
+% acc = sum(Ypred == Yvalid)/numel(Yvalid);
+
+% Ytest = predict(net, test_imgs);
+
+% confusionchart(test(1:10));
+% figure;
+% plotconfusion(test(1:10), pred(1:10));
+
+
+
+%% Train network with bounding boxes in Scene images
+
+[imds, blds] = objectDetectorTrainingData(gTruth);
+cds = combine(imds, blds);
+options = trainingOptions('sgdm', ...
+    'InitialLearnRate', 0.001, ...
+    'Verbose', true, ...
+    'MiniBatchSize', 16, ...
+    'MaxEpochs', 30, ...
+    'Shuffle', 'every-epoch', ...
+    'VerboseFrequency', 10);
+
+% [detector, info] = trainRCNNObjectDetector(cds, )
 
 
 %% Import JPEG images, convert to .mat for image labeller
