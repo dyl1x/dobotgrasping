@@ -7,6 +7,17 @@ clc
 set(0,'DefaultFigureWindowStyle','docked');
 
 
+idx = 0;
+%% Capture Images from ros subscription
+
+% rosinit()
+sub = rossubscriber("/camera/color/image_raw");
+figure(1)
+i = readImage(sub.receive);
+imshow(i)
+imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
+idx = idx + 1;
+
 %% ROBOT CONTROL : Dobot
 
 close all
@@ -24,21 +35,26 @@ ws = [-0.1 0.5 -0.3 0.3 0 0.4];
 [so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
 [ry, gy, by] = deal(-0.05, 0, 0.05);
 
-uno = Objects('res/obj/arduino_uno.ply', [0.4 ry so], [0 0 0]);
-piz = Objects('res/obj/raspberrypi_zero.ply', [0.4 gy so], [0 0 0]);
+pcb1 = Objects('res/obj/pcb1.ply', [0.4 ry so], [0 0 0]);
+pcb2 = Objects('res/obj/pcb2.ply', [0.4 0.25 so], [0 0 0]);
+
+% pcb3 = Objects('res/obj/pcb3.ply', [0.4 0.5 so], [0 0 0]);
+
+% uno = Objects('res/obj/arduino_uno.ply', [0.4 ry so], [0 0 0]);
+% piz = Objects('res/obj/raspberrypi_zero.ply', [0.4 gy so], [0 0 0]);
 
 % red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
 % green_sphere = Objects('res/shapes/green_sphere.ply', [0.4 gy so], [0 0 0]);
 % blue_sphere = Objects('res/shapes/blue_sphere.ply', [0.4 by so], [0 0 0]);
-% 
+
 % red_cube = Objects('res/shapes/red_cube.ply', [0.45 ry co], [0 0 0]);
 % green_cube = Objects('res/shapes/green_cube.ply', [0.45 gy co], [0 0 0]);
 % blue_cube = Objects('res/shapes/blue_cube.ply', [0.45 by co], [0 0 0]);
-% 
+
 % red_pyramid = Objects('res/shapes/red_pyramid.ply', [0.5 ry po], [0 0 0]);
 % green_pyramid = Objects('res/shapes/green_pyramid.ply', [0.5 gy po], [0 0 0]);
 % blue_pyramid = Objects('res/shapes/blue_pyramid.ply', [0.5 by po], [0 0 0]);
-% 
+
 % red_rectangle = Objects('res/shapes/red_rectangle.ply', [0.55 ry ro], [0 0 0]);
 % green_rectangle = Objects('res/shapes/green_rectangle.ply', [0.55 gy ro], [0 0 0]);
 % blue_rectangle = Objects('res/shapes/blue_rectangle.ply', [0.55 by ro], [0 0 0]);
@@ -373,11 +389,64 @@ options = trainingOptions('sgdm', ...
 
 %% Import JPEG images, convert to .mat for image labeller
 
+% intention: save labels, label defs and image datastore used for labeling
+% save session runs into unsolvable path error
+% exporting groundTruth object fails to reload into workspace (empty)
 
-image_folder = fullfile('/res/images');
-imds = imageDatastore(imagefolder);
+% working plan - set breakpoint at label_def
+% First load in scene_dataset into ImageLabeler
+loadin = false;
+skip = true;
+scene_dataset = imageDatastore('working/images/scene_dataset');
+
+if skip == true
+    labels = load('labels.mat');
+    label_defs = load('label_defs.mat');
+    gtSource = groundTruthDataSource(scene_dataset);
+    recon_gTruth = groundTruth(gtSource, label_defs.label_defs, labels.labels);
+    imageLabeler(recon_gTruth);
+    return;
+end
+
+% create and save label definitions to label_defs.mat file
+% export the created gTruth to workspace, extract gTruth.LabelData to a label.mat file
+% this way we can ensure we won't lose data when reloading labels onto
+% images say for expanding a dataset or removing poor data
+% img order  0  1  10  11  12 ..  19  2  20  21
+% maps to labels order
 
 
+label_defs = gTruth.LabelDefinitions;
+save('label_defs')
+
+labels = gTruth.LabelData;
+save('labels')
+
+gtSource = groundTruthDataSource(scene_dataset);
+
+if loadin == true
+    delete(labels)
+    delete(label_defs)
+    labels = load('labels.mat');
+    label_defs = load('label_defs.mat');
+    recon_gTruth = groundTruth(gtSource, label_defs.label_defs, labels.labels);
+else
+    recon_gTruth = groundTruth(gtSource, label_defs, labels);
+end
+
+imageLabeler(recon_gTruth)
+
+% [imds, blds] = objectDetectorTrainingData(gTruth);
+
+% image_folder = fullfile('/res/images');
+% imds = imageDatastore(imagefolder);
+
+%% Test
+
+visiondatadir = fullfile(toolboxdir('vision'),'visiondata');
+
+buildingImage = imread(fullfile(visiondatadir,'building','building1.JPG'));
+buildingLabels = imread(fullfile(visiondatadir,'buildingPixelLabels','Label_1.png'));
 
 %% SIFT image recognition
 
