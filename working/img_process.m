@@ -1,10 +1,104 @@
-% 1. CREATE LOOKUP NETWORK : To classify objects to coloured shapes, using pretrained Googlenet Model
-% 2. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
-% 3. CREATE SCENE NETWORK : To locate and draw bounding boxes around objects in img
-% 4. SIFT SURF Feature Detection
+
+% IMG Processing from Intel Camera for Dobot Grasping
+
+% 1. COMBINE NETWORKS AND ROSBAGS : generate world coords of shapes from alignDepth topic
+% 2. CREATE/TEST LOOKUP NETWORK : To classify objects to coloured shapes, using pretrained Googlenet Model
+% 3. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
+% 4. CREATE/TEST SCENE NETWORK : To locate and draw bounding boxes around objects in img
+% 5. SIFT SURF Feature Detection
 
 
-%% 1. LOOKUP IMG : To classify objects to coloured shapes, using pretrained Googlenet Model
+set(0, 'DefaultFigureWindowStyle', 'docked');
+
+%% 1. COMBINE NETWORKS AND ROSBAGS : generate world coords of shapes from alignDepth topic
+clf
+clc
+clear all
+close all
+
+
+load('scene_detector.mat')
+% load('trained_network_1.mat')
+
+filename = '3ObjAlignDepth';
+bag = rosbag(strcat(['bag/', filename, '.bag']));
+
+% Show RGB Image
+RGB_data = select(bag, 'Topic', '/camera/color/image_raw');
+firstColourImage = readMessages(RGB_data, 1);
+color_img = readImage(firstColourImage{1,1});
+figure;
+imshow(color_img)
+
+% Show Depth Image
+D_data = select(bag, 'Topic', '/camera/depth/image_rect_raw');
+firstDepthImage = readMessages(D_data, 1);
+depth_img = readImage(firstDepthImage{1,1});
+figure;
+imshow(depth_img)
+
+
+% Show Aligned RGB-D Image
+AD_data = select(bag, 'Topic', '/camera/aligned_depth_to_color/image_raw');
+firstADepthImage = readMessages(AD_data, 1);
+aligned_img = readImage(firstADepthImage{1,1});
+figure;
+imshow(aligned_img)
+
+info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
+infoMsg = readMessages(info);
+intrinsic_matrix = infoMsg{1}.K;
+
+% # Intrinsic camera matrix for the raw (distorted) images.
+% #     [fx  0 cx]
+% # K = [ 0 fy cy]
+% #     [ 0  0  1]
+% # Projects 3D points in the camera coordinate frame to 2D pixel
+% # coordinates using the focal lengths (fx, fy) and principal point
+% # (cx, cy).
+% float64[9]  K # 3x3 row-major matrix
+% 
+% # Rectification matrix (stereo cameras only)
+% # A rotation matrix aligning the camera coordinate system to the ideal
+% # stereo image plane so that epipolar lines in both stereo images are
+% # parallel.
+% float64[9]  R # 3x3 row-major matrix
+% 
+% # Projection/camera matrix
+% #     [fx'  0  cx' Tx]
+% # P = [ 0  fy' cy' Ty]
+% #     [ 0   0   1   0]
+% # By convention, this matrix specifies the intrinsic (camera) matrix
+% #  of the processed (rectified) image. That is, the left 3x3 portion
+% #  is the normal camera intrinsic matrix for the rectified image.
+% # It projects 3D points in the camera coordinate frame to 2D pixel
+% #  coordinates using the focal lengths (fx', fy') and principal point
+% #  (cx', cy') - these may differ from the values in K.
+% # For monocular cameras, Tx = Ty = 0. Normally, monocular cameras will
+% #  also have R = the identity and P[1:3,1:3] = K.
+% # For a stereo pair, the fourth column [Tx Ty 0]' is related to the
+% #  position of the optical center of the second camera in the first
+% #  camera's frame. We assume Tz = 0 so both cameras are in the same
+% #  stereo image plane. The first camera always has Tx = Ty = 0. For
+% #  the right (second) camera of a horizontal stereo pair, Ty = 0 and
+% #  Tx = -fx' * B, where B is the baseline between the cameras.
+% # Given a 3D point [X Y Z]', the projection (x, y) of the point onto
+% #  the rectified image is given by:
+% #  [u v w]' = P * [X Y Z 1]'
+% #         x = u / w
+% #         y = v / w
+% #  This holds for both images of a stereo pair.
+% float64[12] P # 3x4 row-major matrix
+
+% [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
+
+
+[bbox, scores, labels, annot_color_img] = return_boxes(scene_detector, color_img, aligned_img, 2);
+
+
+
+
+%% 2. CREATE/TEST LOOKUP NET : To classify objects to coloured shapes, using pretrained Googlenet Model
 
 clear
 clc
@@ -70,17 +164,18 @@ save("trained_network_1.mat");
 
 
 
-%% 2. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
+%% 3. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
 
-% intention: save labels, label defs and image datastore used for labeling
-% save session runs into unsolvable path error
-% exporting groundTruth object fails to reload into workspace (empty)
+% Intention: save labels, label defs and image datastore used for labeling to reload later
+% Issues:
+% 1. save app session runs into unsolvable path error
+% 2. exporting groundTruth object fails to reload into workspace (empty)
 
 % working plan - set breakpoint at label_def
 % First load in scene_dataset into ImageLabeler
 
 loadin = false;
-skip = true; % set to true for training network (post labelling)
+skip = false; % set to true for training network (post labelling)
 
 scene_dataset = imageDatastore('working/images/scene_dataset');
 
@@ -93,11 +188,13 @@ if skip == true
     return;
 end
 
+% imageLabeler(scene_dataset)
+
 % create and save label definitions to label_defs.mat file
 % export the created gTruth to workspace, extract gTruth.LabelData to a label.mat file
 % this way we can ensure we won't lose data when reloading labels onto
 % images say for expanding a dataset or removing poor data
-% img order  0  1  10  11  12 ..  19  2  20  21
+% img order  0  1  10  11  12 ..  19  2  20  21 when numbers are used in filename
 % maps to labels order
 
 
@@ -129,30 +226,56 @@ imageLabeler(recon_gTruth)
 
 
 
-%% 3. CREATE SCENE NETWORK : To locate and draw bounding boxes around objects in img
+%% 4. CREATE/TEST SCENE NETWORK : To locate and draw bounding boxes around objects in img
 
-labels = load('labels.mat');
-label_defs = load('label_defs.mat');
-gtSource = groundTruthDataSource(scene_dataset);
+clc
+close
+clear
 
-recon_gTruth = groundTruth(gtSource, label_defs.label_defs, labels.labels);
+% raw_labels = load('scene_labels.mat');
+% labels = raw_labels.labels;
 
-[imds, blds] = objectDetectorTrainingData(gTruth);
-cds = combine(imds, blds);
-options = trainingOptions('sgdm', ...
-    'InitialLearnRate', 0.001, ...
-    'Verbose', true, ...
-    'MiniBatchSize', 16, ...
-    'MaxEpochs', 30, ...
-    'Shuffle', 'every-epoch', ...
-    'VerboseFrequency', 10);
+% raw_label_defs = load('scene_label_defs.mat');
+% label_defs = raw_label_defs.label_defs;
+% scene_dataset = imageDatastore('working/images/scene_dataset');
+% gtSource = groundTruthDataSource(scene_dataset);
 
-[detector, info] = trainRCNNObjectDetector(cds, )
+% recon_gTruth = groundTruth(gtSource, label_defs, labels);
+% imageLabeler(recon_gTruth)
+
+% open in imageLabeler and save as table rather than gTruth
+TrainNet = false;
+
+if TrainNet == true
+    load('sceneTable')
+    
+    layers = [imageInputLayer([72 128 3])
+            convolution2dLayer([2 2],2)
+            reluLayer()
+            fullyConnectedLayer(2)
+            softmaxLayer()
+            classificationLayer()];
+    
+    
+    options = trainingOptions('sgdm', ...
+        'MiniBatchSize', 5, ...
+        'MaxEpochs', 5, ...
+        'InitialLearnRate', 3e-6, ...
+        'Shuffle', 'every-epoch', ...
+        'Verbose', true); % 'Plots', 'training-progress'
+
+    [scene_detector, scene_info] = trainRCNNObjectDetector(sceneTable, layers, options);
+else
+    load('scene_detector.mat')
+    load('scene_info.mat')
+end
+
+img = imread('working/images/scene_dataset/IMG_11.jpeg');
+
+[bbox, scores, labels] = test_scene_net(scene_detector, img, 7);
 
 
-
-
-%% 4. SIFT SURF Feature Detection : Object Detection in a Cluttered Scene using point feature matching
+%% 5. SIFT SURF Feature Detection : Object Detection in a Cluttered Scene using point feature matching
 
 clc
 clear all

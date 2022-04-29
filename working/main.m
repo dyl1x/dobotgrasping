@@ -6,9 +6,15 @@ clearvars
 clc
 set(0,'DefaultFigureWindowStyle','docked');
 
+% 1. Capturing images from camera
+% 2. Robot Control with objects
+% 3. ROS BAGS : Load/Explore
+% 4. ROS BAGS : Visualise as point cloud
+% 5. ROS BAGS : Extract Image
 
+%%
 idx = 0;
-%% Capture Images from ros subscription
+%% 1. Capture Images from camera with ros subscription 
 
 % rosinit()
 sub = rossubscriber("/camera/color/image_raw");
@@ -18,7 +24,7 @@ imshow(i)
 imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
 idx = idx + 1;
 
-%% ROBOT CONTROL : Dobot
+%% 2. ROBOT CONTROL : Dobot
 
 close all
 clearvars
@@ -69,7 +75,7 @@ camlight
 
 % dobot.calc_volume(10);
 % axis equal
-%% ROS BAGS : Load/Explore
+%% 3. ROS BAGS : Load/Explore
 
 clc
 clear all
@@ -101,7 +107,7 @@ figure(3)
 imshow(img_gray)
 
 
-%% ROS BAGS : Visualise as point cloud
+%% 4. ROS BAGS : Visualise as point cloud
 close all
 clearvars
 clc
@@ -159,7 +165,7 @@ pcobj = pointCloud(readXYZ(pc_data1{1}),'Color',uint8(255*readRGB(pc_data1{1})))
 % pc1_cart = [x', y', zeros(180, 1)];
 % pointcloud = pointCloud(pc1_cart, 'Color', [ones(180, 1), zeros(180, 1), zeros(180, 1)] );
 
-%% ROS BAG : Extract Image
+%% 5. ROS BAG : Extract Image
 
 filename = '5ObjPCloudColorizer';
 bag = rosbag(strcat(['bag/', filename, '.bag']));

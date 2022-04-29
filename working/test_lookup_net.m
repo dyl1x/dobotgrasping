@@ -1,4 +1,4 @@
-function test_network(net, image)
+function [R, label, probability] = test_lookup_net(net, image)
 
 I = imread(image);
 R = imresize(I, [224, 224]); % image size
