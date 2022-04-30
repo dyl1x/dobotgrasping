@@ -113,14 +113,14 @@ clearvars
 clc
 
 
-bag1 = rosbag('bag/3obj3colours.bag');
+bag1 = rosbag('bag/6obj3colours.bag');
 
 pc_data = select(bag1, 'Topic', '/camera/depth/color/points');
 
-pc_data1 = readMessages(pc_data, 1);
+msg = readMessages(pc_data, 1);
 
-xyz = readXYZ(pc_data1{1});
-rgb = readRGB(pc_data1{1});
+xyz = readXYZ(msg{1});
+rgb = readRGB(msg{1});
 
 % figure(1);
 % scatter3(pc_data1{1});
@@ -135,10 +135,10 @@ rgb = readRGB(pc_data1{1});
 
 % pc_data1{1}.Data(pc_data1{1}.Data > 200) = 0;
 
-figure(3);
-scatter3(pc_data1{1})
+% figure;
+% scatter3(msg{1})
 
-figure(4); % Trim far away background data
+figure; % Trim far away background data
 new_xyz = [];
 for i = 1:size(xyz)
     row = xyz(i, :);
@@ -153,11 +153,11 @@ for i = 1:size(xyz)
     end
 end
 
-pcshow(new_xyz)
+% pcshow(new_xyz)
 
 
-pcobj = pointCloud(readXYZ(pc_data1{1}),'Color',uint8(255*readRGB(pc_data1{1})));
-    
+pcobj = pointCloud(readXYZ(msg{1}),'Color',uint8(255*readRGB(msg{1})));
+
     
 % pcshow(readXYZ(pc_data1{1}));
 

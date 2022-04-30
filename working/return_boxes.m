@@ -1,4 +1,4 @@
-function [bboxs, scores, labels, color_img] = return_boxes(detector, color_img, aligned_img, n)
+function [bboxs, B, scores, labels, color_img] = return_boxes(detector, color_img, aligned_img, n)
 
 [bboxs, scores, labels] = detect(detector, color_img, 'MiniBatchSize', 32);
 
@@ -9,7 +9,7 @@ if n > size(scores)
 end
 
 [~, idx] = sort(scores,'descend');
-B = idx(1:n);
+B = idx(1:n); % indexes
 
 img_size = size(color_img);
 figure
@@ -45,12 +45,11 @@ for i=1:n
     annotation = sprintf('idx: %d, %s: (Confidence = %0.3f)',B(i), labels(B(i)), scores(B(i)));
     color_img = insertObjectAnnotation(color_img, 'rectangle', bbox, annotation);
     imshow(color_img)
+
     x = bbox(1);
     y = bbox(2);
     w = bbox(3);
     h = bbox(4);
-
-   
 
     disp(['idx: ', num2str(B(i))])
     disp(['x: ', num2str(x), ', y: ', num2str(y)])

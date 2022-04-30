@@ -16,6 +16,7 @@ clc
 clear all
 close all
 
+n = 2; % num features in img
 
 load('scene_detector.mat')
 % load('trained_network_1.mat')
@@ -45,58 +46,53 @@ aligned_img = readImage(firstADepthImage{1,1});
 figure;
 imshow(aligned_img)
 
+% Show PointCloud Data
+% pc_data = select(bag, 'Topic', '/camera/depth/color/points');
+% msg = readMessages(pc_data, 1);
+% xyz = readXYZ(msg{1});
+
+% Show Camera Intrinsics
 info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
 infoMsg = readMessages(info);
 intrinsic_matrix = infoMsg{1}.K;
 
-% # Intrinsic camera matrix for the raw (distorted) images.
-% #     [fx  0 cx]
-% # K = [ 0 fy cy]
-% #     [ 0  0  1]
-% # Projects 3D points in the camera coordinate frame to 2D pixel
-% # coordinates using the focal lengths (fx, fy) and principal point
-% # (cx, cy).
-% float64[9]  K # 3x3 row-major matrix
-% 
-% # Rectification matrix (stereo cameras only)
-% # A rotation matrix aligning the camera coordinate system to the ideal
-% # stereo image plane so that epipolar lines in both stereo images are
-% # parallel.
-% float64[9]  R # 3x3 row-major matrix
-% 
-% # Projection/camera matrix
-% #     [fx'  0  cx' Tx]
-% # P = [ 0  fy' cy' Ty]
-% #     [ 0   0   1   0]
-% # By convention, this matrix specifies the intrinsic (camera) matrix
-% #  of the processed (rectified) image. That is, the left 3x3 portion
-% #  is the normal camera intrinsic matrix for the rectified image.
-% # It projects 3D points in the camera coordinate frame to 2D pixel
-% #  coordinates using the focal lengths (fx', fy') and principal point
-% #  (cx', cy') - these may differ from the values in K.
-% # For monocular cameras, Tx = Ty = 0. Normally, monocular cameras will
-% #  also have R = the identity and P[1:3,1:3] = K.
-% # For a stereo pair, the fourth column [Tx Ty 0]' is related to the
-% #  position of the optical center of the second camera in the first
-% #  camera's frame. We assume Tz = 0 so both cameras are in the same
-% #  stereo image plane. The first camera always has Tx = Ty = 0. For
-% #  the right (second) camera of a horizontal stereo pair, Ty = 0 and
-% #  Tx = -fx' * B, where B is the baseline between the cameras.
-% # Given a 3D point [X Y Z]', the projection (x, y) of the point onto
-% #  the rectified image is given by:
-% #  [u v w]' = P * [X Y Z 1]'
-% #         x = u / w
-% #         y = v / w
-% #  This holds for both images of a stereo pair.
-% float64[12] P # 3x4 row-major matrix
+% Intrinsic camera matrix for the raw (distorted) images.
+%     [fx  0 cx]
+% K = [ 0 fy cy]
+%     [ 0  0  1]
+
+% Projects 3D points in the camera coordinate frame to 2D pixel
+% coordinates using the focal lengths (fx, fy) and principal point
+% (cx, cy).
+
+fx = intrinsic_matrix(1); % focal length
+fy = intrinsic_matrix(5);
+
+cx = intrinsic_matrix(3); % principle point
+cy = intrinsic_matrix(6);
 
 % [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
+[bbox, index, scores, labels, annot_color_img] = return_boxes(scene_detector, color_img, aligned_img, n);
 
 
-[bbox, scores, labels, annot_color_img] = return_boxes(scene_detector, color_img, aligned_img, 2);
+for i=1:n
+    row = bbox(index(i), :);
+    [x_, y_, w_, h_] = deal(row(1), row(2), row(3), row(4));
+    [u, v] = calc_centroid(x_, y_, w_, h_); % bounding box centre pixel
 
+    d = aligned_img(v, u);
 
+    X = ((u - cx) * d) / fx;
+    Y = ((v - cy) * d) / fy;
+    Z = d;
 
+    disp(['idx: ', num2str(index(i))]);
+    disp([num2str(X), ', ', num2str(Y), ', ', num2str(Z)])
+
+    annot_color_img = insertMarker(annot_color_img, [u, v],'x', 'color', 'green', 'size', 10);
+end
+
+imshow(annot_color_img)
 
 %% 2. CREATE/TEST LOOKUP NET : To classify objects to coloured shapes, using pretrained Googlenet Model
 
