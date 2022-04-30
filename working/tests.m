@@ -20,3 +20,11 @@ axis equal
 vertices = get(mesh_h,'Vertices');
 transformedVertices = [vertices,ones(size(vertices,1),1)] *transl(-0.8,-0.350,0.01)';
 set(mesh_h,'Vertices',transformedVertices(:,1:3));
+
+%%
+clf
+mesh_h = PlaceObject('models/pcb3.ply');
+axis equal
+vertices = get(mesh_h,'Vertices');
+transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
+set(mesh_h,'Vertices',transformedVertices(:,1:3));

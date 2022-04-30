@@ -5,7 +5,8 @@
 % class created by:
 % chamath edirisinhege - 12977866
 %
-%inputs : pose
+%inputs : pose transformation matrix
+%         type: 1 - 3 ; model of pcb
 %
 classdef pcb <handle
     properties
@@ -13,11 +14,14 @@ classdef pcb <handle
         pose = eye(4);
         vertices;
         vSize;
+        type = 2;
     end
     methods
-        function self = pcb(pose)
-            self.LoadModel();
+        function self = pcb(type,pose)
+            self.type = type;
             self.pose = pose;
+            
+            self.LoadModel();            
             self.MoveMesh(pose);
             
         end
@@ -25,7 +29,7 @@ classdef pcb <handle
         function LoadModel(self)
             
             % After saving in blender then load the triangle mesh
-            [f,v,data] = plyread('models/brick.ply','tri');
+            [f,v,data] = plyread(['models/pcb',num2str(self.type),'.ply'],'tri');
             
             % Get vertex count
             self.vSize = size(v,1);
