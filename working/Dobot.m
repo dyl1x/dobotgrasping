@@ -69,6 +69,7 @@ classdef Dobot < handle
                 end
             end
         end
+%% Workspace volume calculation       
         function calc_volume(self, degrees)
             steps = deg2rad(degrees);
             qlim = self.model.qlim;
@@ -102,6 +103,7 @@ classdef Dobot < handle
 
         end
 
+%% Calculate reach
         function get_reach(self)
             maxX = max(self.volume(:, 1)) - self.model.base(1, 4);
             minX = min(self.volume(:, 1)) - self.model.base(1, 4);
@@ -116,7 +118,7 @@ classdef Dobot < handle
             self.vertical_reach = max(maxZ, abs(minZ));
             self.arc_radius = (self.vertical_reach / 2) + ((self.transversal_reach)^2 / 8 * self.vertical_reach);
         end
-
+%% plot volume and stuff
         function plot(self)
             [k, self.computed_volume] = convhull(self.volume(:, 1), self.volume(:, 2), self.volume(:, 3));
             trisurf(k, self.volume(:, 1), self.volume(:, 2), self.volume(:, 3), 'Facecolor', 'cyan');
