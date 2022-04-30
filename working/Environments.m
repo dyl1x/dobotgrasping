@@ -9,8 +9,7 @@
 classdef Environments < handle
     properties
         envSize = 2; % default value
-        ur3Pos;
-        ur5Pos;
+
         brickPos = zeros(9,3); % brick positions
         
         height = 3; % room height
@@ -18,11 +17,10 @@ classdef Environments < handle
     end
     
     methods
-        function self = Environments(size,ur3,ur5)
+        function self = Environments(size)
             %set environment size and other variables from the inputs
             self.envSize = size; 
-            self.ur3Pos = ur3;
-            self.ur5Pos = ur5;
+
             
             self.GenerateEnv();
             self.LoadProps();
@@ -120,46 +118,29 @@ classdef Environments < handle
             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(-self.envSize-0.5,-(self.envSize-0.4),0.01)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
+            mesh_h = PlaceObject('models/table.PLY');
+            axis equal
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));                 
+            
+            mesh_h = PlaceObject('models/conveyor.PLY');
+            axis equal
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] *(trotz(-pi/2)*transl(-0.3,-0.375,0.01))';
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+            
+            mesh_h = PlaceObject('models/conveyor.PLY');
+            axis equal
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] *transl(-0.8,-0.350,0.01)';
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+            
             %ends here
             
             hold off
         end
-%% generate brick positions
-        % randomly generate coordinates and pick 9 of the suitable ones for
-        % the bricks to spawn on.
-        %not the best if the ur3 base is nonzero
-        function GenerateBrickPos(self)
-            disp('generating brick positions around the UR3 base')
-            ur3 = self.ur3Pos(1:2,4)';
-            rng(0,'twister');
-            upperlim = max(ur3)+2;
-            lowerlim = min(ur3)-2;
-            
-            r = (upperlim - lowerlim).*rand(300,1) + lowerlim;
-            
-            brickpos = zeros(9,3);
-            count = 1;
-            for i =1: size(r)-1
-                tr = [r(i),r(i+1)];
-                
-                d = sqrt((tr(1,1)-ur3(1,1))*tr(1,1)-ur3(1,1) + (tr(1,2)-ur3(1,2))*tr(1,2)-ur3(1,2));
-                if d > 0.05 && d < 0.7
-                    brickpos(count,1:2) = tr;
-                    count = count +1;
-                    if count > 9
-                        break;
-                    end
-                end                
-            end
-            
-            % addjust z so they are on the same plane as the base of the
-            % robot
-%             for j=1:9
-%                 self.brickPos(i:3) = self.ur3Pos(1,3);
-%             end
-            
-            self.brickPos = brickpos;                                  
-        end
+
 %%  spawn in some bricks
         function SpawnBricks(self)
             
