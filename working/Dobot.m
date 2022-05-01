@@ -68,6 +68,8 @@ classdef Dobot < handle
                     continue;
                 end
             end
+            
+            axis equal
         end
 %% Workspace volume calculation       
         function calc_volume(self, degrees)

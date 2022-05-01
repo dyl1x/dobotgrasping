@@ -1,4 +1,4 @@
-% clreates the sorrounding and spwan in static props and the dynamic bricks.
+% creates the sorrounding and spwan in static props and the dynamic bricks.
 % uses the set of code from canvas to plot images on the surfaces using
 % surf.
 % Imports the static props using code from week 4 lab (moving pen example)
@@ -10,17 +10,15 @@ classdef Environments < handle
     properties
         envSize = 2; % default value
 
-        brickPos = zeros(9,3); % brick positions
-        
-        height = 3; % room height
-        brickArray; %s tores all the brick obkects so we can call them as brickArray(x)
+        pcbPos = zeros(9,3); % brick positions
+        height = 2.5; % room height
+        pcbArray; %s tores all the brick obkects so we can call them as brickArray(x)
     end
     
     methods
         function self = Environments(size)
             %set environment size and other variables from the inputs
             self.envSize = size; 
-
             
             self.GenerateEnv();
             self.LoadProps();
@@ -79,7 +77,7 @@ classdef Environments < handle
             mesh_h = PlaceObject('models/stand.ply');
             axis equal
             vertices = get(mesh_h,'Vertices');
-            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize-0.5,0.01)';
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.01)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
             mesh_h = PlaceObject('models/estop.ply');
@@ -87,7 +85,7 @@ classdef Environments < handle
             vertices = get(mesh_h,'Vertices');
             transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize-0.5,0.99)';
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.99)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
             % front stand and estop
@@ -118,18 +116,21 @@ classdef Environments < handle
             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(-self.envSize-0.5,-(self.envSize-0.4),0.01)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
+            % dobot table
             mesh_h = PlaceObject('models/table.PLY');
             axis equal
             vertices = get(mesh_h,'Vertices');
             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));                 
             
+            % conveyor incoming
             mesh_h = PlaceObject('models/conveyor.PLY');
             axis equal
             vertices = get(mesh_h,'Vertices');
             transformedVertices = [vertices,ones(size(vertices,1),1)] *(trotz(-pi/2)*transl(-0.3,-0.375,0.01))';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
+            %c onveyor outgoing
             mesh_h = PlaceObject('models/conveyor.PLY');
             axis equal
             vertices = get(mesh_h,'Vertices');
@@ -145,19 +146,13 @@ classdef Environments < handle
         function SpawnBricks(self)
             
             hold on
-            brick1 = Brickv2(transl(self.brickPos(1,:)));
-            brick2 = Brickv2(transl(self.brickPos(2,:)));
-            brick3 = Brickv2(transl(self.brickPos(3,:)));
-            brick4 = Brickv2(transl(self.brickPos(4,:)));
-            brick5 = Brickv2(transl(self.brickPos(5,:)));
-            brick6 = Brickv2(transl(self.brickPos(6,:)));
-            brick7 = Brickv2(transl(self.brickPos(7,:)));
-            brick8 = Brickv2(transl(self.brickPos(8,:)));
-            brick9 = Brickv2(transl(self.brickPos(9,:)));
+            pcb1 = pcb(transl(self.pcbPos(1,:)));
+            pcb2 = pcb(transl(self.pcbPos(2,:)));
+            pcb3 = pcb(transl(self.pcbPos(3,:)));
             hold off
             
             %check em in the array
-            self.brickArray = [brick1,brick2,brick3,brick4,brick5,brick6,brick7,brick8,brick9];
+            self.pcbArray = [pcb1,pcb2,pcb3];
             
             disp('Brick positions generated and models have been loaded');
         end
