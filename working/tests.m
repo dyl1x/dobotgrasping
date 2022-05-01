@@ -28,3 +28,10 @@ axis equal
 vertices = get(mesh_h,'Vertices');
 transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
 set(mesh_h,'Vertices',transformedVertices(:,1:3));
+
+%%
+figure
+ws = [-0.5 0.5 -0.5 0.5 0 0.8];
+qHome = [0,0,0,0];
+
+rt1 = Dobot(ws,3);

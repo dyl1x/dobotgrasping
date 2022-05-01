@@ -8,7 +8,7 @@
 %inputs : pose transformation matrix
 %         type: 1 - 3 ; model of pcb
 %
-classdef pcb <handle
+classdef PCB <handle
     properties
         mesh_h;
         pose = eye(4);
@@ -17,7 +17,7 @@ classdef pcb <handle
         type = 2;
     end
     methods
-        function self = pcb(type,pose)
+        function self = PCB(type,pose)
             self.type = type;
             self.pose = pose;
             
