@@ -11,9 +11,10 @@ set(0,'DefaultFigureWindowStyle','docked');
 % 3. ROS BAGS : Load/Explore
 % 4. ROS BAGS : Visualise as point cloud
 % 5. ROS BAGS : Extract Image
+% 6. ROS BAGS : Get Image, detect shape, simulate in scene with camera
 
 %%
-idx = 0;
+idx = 22;
 %% 1. Capture Images from camera with ros subscription 
 
 % rosinit()
@@ -24,7 +25,7 @@ imshow(i)
 imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
 idx = idx + 1;
 
-%% 2. ROBOT CONTROL : Dobot
+%% 2. ROBOT CONTROL : Dobot - SNC Project
 
 close all
 clearvars
@@ -41,15 +42,7 @@ ws = [-0.1 0.5 -0.3 0.3 0 0.4];
 [so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
 [ry, gy, by] = deal(-0.05, 0, 0.05);
 
-pcb1 = Objects('res/obj/pcb1.ply', [0.4 ry so], [0 0 0]);
-pcb2 = Objects('res/obj/pcb2.ply', [0.4 0.25 so], [0 0 0]);
-
-% pcb3 = Objects('res/obj/pcb3.ply', [0.4 0.5 so], [0 0 0]);
-
-% uno = Objects('res/obj/arduino_uno.ply', [0.4 ry so], [0 0 0]);
-% piz = Objects('res/obj/raspberrypi_zero.ply', [0.4 gy so], [0 0 0]);
-
-% red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
+red_sphere = Objects('res/shapes/red_sphere.ply', [0.4 ry so], [0 0 0]);
 % green_sphere = Objects('res/shapes/green_sphere.ply', [0.4 gy so], [0 0 0]);
 % blue_sphere = Objects('res/shapes/blue_sphere.ply', [0.4 by so], [0 0 0]);
 
@@ -177,84 +170,133 @@ imshow(img)
 imwrite(img, strcat(['working/images/scene_dataset/', filename, '.jpeg']));
 
 
-
-%% Classifier
-
-net = googlenet;
+%% 6. ROS BAGS : extract img, detect shape, place in sim
 
 
-I = imread("peppers.png");
-figure(1);
-imshow(I)
-pause(2);
-
-inputSize = net.Layers(1).InputSize;
-I = imresize(I,inputSize(1:2));
-imshow(I)
-pause(2)
-% Classify and Display Image
-
-% Classify and display the image with the predicted label.
-
-label = classify(net,I);
-figure
-imshow(I)
-title(string(label))
-
-%% Skeleton
+close all
+clearvars
+clc
+set(0,'DefaultFigureWindowStyle','docked');
 
 
-% Variables
-% ---------
+n = 6; % num features in img
 
-% vary order of deposition
-% colour order: array [red, green, blue]
-% shape order: array [cube, ball, pyramid]
+load('scene_detector.mat')
+load('shape_detector.mat')
 
-% select deposition location
-% coords
-% offset
+filename = 'ThreeSphereThreeCubeTest';
+bag = rosbag(strcat(['bag/', filename, '.bag']));
 
+% Show RGB Image
+RGB_data = select(bag, 'Topic', '/camera/color/image_raw');
+firstColourImage = readMessages(RGB_data, 1);
+color_img = readImage(firstColourImage{1,1});
+figure;
+imshow(color_img)
 
-% Process
-% -------
-
-% Turn on Dobot
-% Turn on Camera
- 
-% Initial scan of environment to determine payload locations
-% Calculate types (cube, ball, triangle)
-% move to each payload (clarify type with second scan/calc)
-
-
-% Calc trajectories to each centroid, grip per shape
-% Execute trajectories
+% Show Depth Image
+D_data = select(bag, 'Topic', '/camera/depth/image_rect_raw');
+firstDepthImage = readMessages(D_data, 1);
+depth_img = readImage(firstDepthImage{1,1});
+% figure;
+% imshow(depth_img)
 
 
+% Show Aligned RGB-D Image
+AD_data = select(bag, 'Topic', '/camera/aligned_depth_to_color/image_raw');
+firstADepthImage = readMessages(AD_data, 1);
+aligned_img = readImage(firstADepthImage{1,1});
+% figure;
+% imshow(aligned_img)
+
+% Show PointCloud Data
+% pc_data = select(bag, 'Topic', '/camera/depth/color/points');
+% msg = readMessages(pc_data, 1);
+% xyz = readXYZ(msg{1});
+
+% Show Camera Intrinsics
+info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
+infoMsg = readMessages(info);
+intrinsic_matrix = infoMsg{1}.K;
+
+% Intrinsic camera matrix for the raw (distorted) images.
+%     [fx  0 cx]
+% K = [ 0 fy cy]
+%     [ 0  0  1]
+
+% Projects 3D points in the camera coordinate frame to 2D pixel
+% coordinates using the focal lengths (fx, fy) and principal point
+% (cx, cy).
+
+fx = intrinsic_matrix(1); % focal length
+fy = intrinsic_matrix(5);
+
+cx = intrinsic_matrix(3); % principle point
+cy = intrinsic_matrix(6);
+
+% [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
+[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
+
+shape_array = zeros(n, 3);
+for i=1:n
+    ix = bbox_idx(i);
+    row = bbox(ix, :);
+    [x_, y_, w_, h_] = deal(row(1), row(2), row(3), row(4));
+    [u, v] = calc_centroid(x_, y_, w_, h_); % bounding box centre pixel
+
+    d = aligned_img(v, u); % get depth at img centroid
+
+    X = ((u - cx) * d) / fx;
+    Y = ((v - cy) * d) / fy;
+    Z = d;
+
+    disp(['idx: ', num2str(ix)]);
+    disp([num2str(X), ', ', num2str(Y), ', ', num2str(Z)])
+
+    annot_color_img = insertMarker(annot_color_img, [u, v],'x', 'color', 'green', 'size', 10);
+    shape_array(i, :) = [X, Y, Z];
+end
+imshow(annot_color_img)
 
 
-%% Functions
-
-
-function [imgBW] = gray2bw(imgGS, threshold)
-
-% Get the size of the input image
-[rows, cols, channels] = size(imgGS);
-
-%create an empty matrix for the binary image
-imgBW = zeros(rows,cols);
-
-for i = 1:rows
-    for j = 1:cols
-        % Your logic goes in here
-        if imgGS(i, j) >= threshold*256
-            imgBW(i, j) = 1;
-        end
-    end
+shape_labels = strings(n, 1);
+figure;
+for i=1:n
+    subplot(1, n, i)
+    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
+    img_cut = color_img(y:y+h-1, x:x+w-1, :);
+    [R, map] = imresize(img_cut, [224, 224]); % image size
+    [shape_label, probability] = classify(net, R);
+    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
+    shape_labels(i) = char(shape_label);
 end
 
-imgBW = logical(imgBW);
 
+figure;
+% Set Variables
+
+view(2);
+ws = [-0.1 0.9 -0.4 0.4 0 0.4];
+
+[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
+[ry, gy, by] = deal(-0.05, 0, 0.05);
+
+dobot = Dobot(ws, '1');
+dobot.model.teach
+hold on
+
+cam = Objects('res/obj/intel_d435.ply', [0.8, 0, 0.2], [0, 0, 0]);
+cam.rot([0, 0, pi/2])
+
+
+for i=1:n
+    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
+    ry = ry + 0.05;
 end
+
+
+% axis equal
+camlight
+
 
 

@@ -72,7 +72,7 @@ cx = intrinsic_matrix(3); % principle point
 cy = intrinsic_matrix(6);
 
 % [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
-[bbox, index, scores, labels, annot_color_img] = return_boxes(scene_detector, color_img, aligned_img, n);
+[bbox, index, scores, labels, annot_color_img, img_cuts] = return_boxes(scene_detector, color_img, aligned_img, n);
 
 
 for i=1:n
@@ -159,7 +159,6 @@ save("trained_network_1.mat");
 
 
 
-
 %% 3. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
 
 % Intention: save labels, label defs and image datastore used for labeling to reload later
@@ -173,13 +172,14 @@ save("trained_network_1.mat");
 loadin = false;
 skip = false; % set to true for training network (post labelling)
 
+
 scene_dataset = imageDatastore('working/images/scene_dataset');
 
 if skip == true
-    labels = load('labels.mat');
-    label_defs = load('label_defs.mat');
+    load('new_labels.mat');
+    load('rec_label_defs.mat');
     gtSource = groundTruthDataSource(scene_dataset);
-    recon_gTruth = groundTruth(gtSource, label_defs.label_defs, labels.labels);
+    recon_gTruth = groundTruth(gtSource, label_defs, labels);
     imageLabeler(recon_gTruth);
     return;
 end
@@ -194,12 +194,6 @@ end
 % maps to labels order
 
 
-label_defs = gTruth.LabelDefinitions;
-save('label_defs')
-
-labels = gTruth.LabelData;
-save('labels')
-
 gtSource = groundTruthDataSource(scene_dataset);
 
 if loadin == true
@@ -212,7 +206,7 @@ else
     recon_gTruth = groundTruth(gtSource, label_defs, labels);
 end
 
-imageLabeler(recon_gTruth)
+% imageLabeler(recon_gTruth)
 
 % [imds, blds] = objectDetectorTrainingData(gTruth);
 
@@ -231,19 +225,24 @@ clear
 % raw_labels = load('scene_labels.mat');
 % labels = raw_labels.labels;
 
-% raw_label_defs = load('scene_label_defs.mat');
-% label_defs = raw_label_defs.label_defs;
-% scene_dataset = imageDatastore('working/images/scene_dataset');
-% gtSource = groundTruthDataSource(scene_dataset);
+load('rec_label_defs.mat');
+load('new_labels.mat');
+scene_dataset = imageDatastore('working/images/scene_dataset');
+gtSource = groundTruthDataSource(scene_dataset);
 
-% recon_gTruth = groundTruth(gtSource, label_defs, labels);
+recon_gTruth = groundTruth(gtSource, label_defs, labels);
 % imageLabeler(recon_gTruth)
+
+% export as sceneTable
+imageFilename = gtSource.Source.Files;
+Shape = labels(:, :).Shape;
+custom_sceneTable = table(imageFilename, Shape);
 
 % open in imageLabeler and save as table rather than gTruth
 TrainNet = false;
 
 if TrainNet == true
-    load('sceneTable')
+%     load('sceneTable')
     
     layers = [imageInputLayer([72 128 3])
             convolution2dLayer([2 2],2)
@@ -260,7 +259,10 @@ if TrainNet == true
         'Shuffle', 'every-epoch', ...
         'Verbose', true); % 'Plots', 'training-progress'
 
-    [scene_detector, scene_info] = trainRCNNObjectDetector(sceneTable, layers, options);
+    [scene_detector, scene_info] = trainRCNNObjectDetector(custom_sceneTable, layers, options);
+    save('scene_detector.mat')
+    save('scene_info.mat')
+
 else
     load('scene_detector.mat')
     load('scene_info.mat')
