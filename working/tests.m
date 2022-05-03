@@ -64,4 +64,15 @@ for i=1:size(qmatrix)
     rt1.model.animate(qmatrix(i,:));
 end
 
+%%
+
+camtr = transl(0.068,0,0)*trotz(180);
+robottr = transl(0,0,0);
+objwrtcam = transl(0.030,0,0);
+
+%%
+objwrtrob =(camtr - objwrtcam)
+
+
+
 

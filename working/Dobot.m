@@ -1,4 +1,4 @@
-classdef Dobot < handle
+Sclassdef Dobot < handle
     properties
         model;
         
