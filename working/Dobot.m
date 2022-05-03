@@ -17,7 +17,7 @@ classdef Dobot < handle
 
         self.GetDobotRobot(num);
 
-        self.PlotAndColourRobot(workspace);%robot,workspace);
+%         self.PlotAndColourRobot(workspace);%robot,workspace);
         end
         
         %% GetDobotRobot
@@ -31,7 +31,7 @@ classdef Dobot < handle
             L1 = Link('d', 0.138, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-135), deg2rad(135)]); % Base
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-5), deg2rad(80)]); % Rear Arm
             L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
-            L4 = Link('d', 0, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-90), deg2rad(90)]);
+            L4 = Link('d', 0, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', [deg2rad(90), deg2rad(-90)]);
             L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-85), deg2rad(85)]); % End effector
 
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
