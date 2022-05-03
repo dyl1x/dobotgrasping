@@ -22,8 +22,9 @@ sub = rossubscriber("/camera/color/image_raw");
 figure(1)
 i = readImage(sub.receive);
 imshow(i)
-imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
-idx = idx + 1;
+
+% imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
+% idx = idx + 1;
 
 %% 2. ROBOT CONTROL : Dobot - SNC Project
 
@@ -179,12 +180,12 @@ clc
 set(0,'DefaultFigureWindowStyle','docked');
 
 
-n = 6; % num features in img
+n = 3; % num features in img
 
 load('scene_detector.mat')
 load('shape_detector.mat')
 
-filename = 'ThreeSphereThreeCubeTest';
+filename = 'RealRobotTest1';
 bag = rosbag(strcat(['bag/', filename, '.bag']));
 
 % Show RGB Image
@@ -198,21 +199,12 @@ imshow(color_img)
 D_data = select(bag, 'Topic', '/camera/depth/image_rect_raw');
 firstDepthImage = readMessages(D_data, 1);
 depth_img = readImage(firstDepthImage{1,1});
-% figure;
-% imshow(depth_img)
-
 
 % Show Aligned RGB-D Image
 AD_data = select(bag, 'Topic', '/camera/aligned_depth_to_color/image_raw');
 firstADepthImage = readMessages(AD_data, 1);
 aligned_img = readImage(firstADepthImage{1,1});
-% figure;
-% imshow(aligned_img)
 
-% Show PointCloud Data
-% pc_data = select(bag, 'Topic', '/camera/depth/color/points');
-% msg = readMessages(pc_data, 1);
-% xyz = readXYZ(msg{1});
 
 % Show Camera Intrinsics
 info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
@@ -299,4 +291,114 @@ end
 camlight
 
 
+%% 7. Subscribe to camera, output world coords
+
+
+close all
+clearvars
+clc
+set(0,'DefaultFigureWindowStyle','docked');
+
+n = 5; % num features in img
+
+load('scene_detector.mat')
+load('shape_detector.mat')
+
+% Show RGB Image
+RGB_data = rossubscriber("/camera/color/image_raw");
+color_img = readImage(RGB_data.receive);
+figure;
+imshow(color_img)
+
+% Show Depth Image
+D_data = rossubscriber('/camera/depth/image_rect_raw');
+depth_img = readImage(D_data.receive);
+
+% Show Aligned RGB-D Image
+AD_data = rossubscriber('/camera/aligned_depth_to_color/image_raw');
+aligned_img = readImage(AD_data.receive);
+
+
+% Show Camera Intrinsics
+info = rossubscriber('/camera/aligned_depth_to_color/camera_info');
+intrinsic_matrix = info.receive.K;
+
+% Intrinsic camera matrix for the raw (distorted) images.
+%     [fx  0 cx]
+% K = [ 0 fy cy]
+%     [ 0  0  1]
+
+% Projects 3D points in the camera coordinate frame to 2D pixel
+% coordinates using the focal lengths (fx, fy) and principal point
+% (cx, cy).
+
+fx = intrinsic_matrix(1); % focal length
+fy = intrinsic_matrix(5);
+
+cx = intrinsic_matrix(3); % principle point
+cy = intrinsic_matrix(6);
+
+% [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
+[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
+
+shape_array = zeros(n, 3);
+for i=1:n
+    ix = bbox_idx(i);
+    row = bbox(ix, :);
+    [x_, y_, w_, h_] = deal(row(1), row(2), row(3), row(4));
+    [u, v] = calc_centroid(x_, y_, w_, h_); % bounding box centre pixel
+
+    d = aligned_img(v, u); % get depth at img centroid
+
+    X = ((u - cx) * d) / fx;
+    Y = ((v - cy) * d) / fy;
+    Z = d;
+
+    disp(['idx: ', num2str(ix)]);
+    disp([num2str(X), ', ', num2str(Y), ', ', num2str(Z)])
+
+    annot_color_img = insertMarker(annot_color_img, [u, v],'x', 'color', 'green', 'size', 10);
+    shape_array(i, :) = [X, Y, Z];
+end
+imshow(annot_color_img)
+
+
+shape_labels = strings(n, 1);
+figure;
+for i=1:n
+    subplot(1, n, i)
+    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
+    img_cut = color_img(y:y+h-1, x:x+w-1, :);
+    [R, map] = imresize(img_cut, [224, 224]); % image size
+    [shape_label, probability] = classify(net, R);
+    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
+    shape_labels(i) = char(shape_label);
+end
+
+
+figure;
+% Set Variables
+
+view(2);
+ws = [-0.1 0.9 -0.4 0.4 0 0.4];
+
+[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
+[ry, gy, by] = deal(-0.05, 0, 0.05);
+
+dobot = Dobot(ws, '1');
+dobot.model.teach
+hold on
+
+cam = Objects('res/obj/intel_d435.ply', [0.8, 0, 0.2], [0, 0, 0]);
+cam.rot([0, 0, pi/2])
+
+
+for i=1:n
+    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
+    ry = ry + 0.05;
+end
+
+
+% axis equal
+camlight
 

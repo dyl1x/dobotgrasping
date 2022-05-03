@@ -231,7 +231,7 @@ scene_dataset = imageDatastore('working/images/scene_dataset');
 gtSource = groundTruthDataSource(scene_dataset);
 
 recon_gTruth = groundTruth(gtSource, label_defs, labels);
-% imageLabeler(recon_gTruth)
+imageLabeler(recon_gTruth)
 
 % export as sceneTable
 imageFilename = gtSource.Source.Files;
