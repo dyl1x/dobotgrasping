@@ -30,10 +30,11 @@ classdef Dobot < handle
         
             L1 = Link('d', 0.138, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-135), deg2rad(135)]); % Base
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-5), deg2rad(80)]); % Rear Arm
-            L3 = Link('d', 0, 'a', 0.147, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
-            L4 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-90), deg2rad(90)]); % End effector
+            L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
+            L4 = Link('d', 0, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-90), deg2rad(90)]);
+            L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-85), deg2rad(85)]); % End effector
 
-            self.model = SerialLink([L1 L2 L3 L4], 'name', self.name);
+            self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
         end
         %% PlotAndColourRobot
@@ -41,10 +42,14 @@ classdef Dobot < handle
         % colour them in if data is available 
         function PlotAndColourRobot(self, workspace)
             for linkIndex = 0:self.model.n
-                disp(strcat(['Model/d', num2str(linkIndex), '.ply']))
-                [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../resources/dobot/d',num2str(linkIndex),'.ply'],'tri');
-                self.model.faces{linkIndex+1} = faceData;
-                self.model.points{linkIndex+1} = vertexData;
+                if (linkIndex == 4)
+                else
+                    disp(strcat(['Model/d', num2str(linkIndex), '.ply']))
+                    [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../resources/dobot/d',num2str(linkIndex),'.ply'],'tri');
+                    self.model.faces{linkIndex+1} = faceData;
+                    self.model.points{linkIndex+1} = vertexData;
+                end
+                
             end
         
             % Display robot
@@ -56,22 +61,23 @@ classdef Dobot < handle
         
             % Try to correctly colour the arm (if colours are in ply file data)
             for linkIndex = 0:self.model.n
-                handles = findobj('Tag', self.model.name);
-                h = get(handles,'UserData');
-                try 
-                    h.link(linkIndex+1).Children.FaceVertexCData = [plyData{linkIndex+1}.vertex.red ...
-                                                                  , plyData{linkIndex+1}.vertex.green ...
-                                                                  , plyData{linkIndex+1}.vertex.blue]/255;
-                    h.link(linkIndex+1).Children.FaceColor = 'interp';
-                catch ME_1
-                    disp(ME_1);
-                    continue;
-                end
+                
+                if (linkIndex == 4)
+                else
+                    handles = findobj('Tag', self.model.name);
+                    h = get(handles,'UserData');
+                    try
+                        h.link(linkIndex+1).Children.FaceVertexCData = [plyData{linkIndex+1}.vertex.red ...
+                            , plyData{linkIndex+1}.vertex.green ...
+                            , plyData{linkIndex+1}.vertex.blue]/255;
+                        h.link(linkIndex+1).Children.FaceColor = 'interp';
+                    catch ME_1
+                        disp(ME_1);
+                        continue;
+                    end
+                end                 
             end
-            
-            axis equal
         end
-%% Workspace volume calculation       
         function calc_volume(self, degrees)
             steps = deg2rad(degrees);
             qlim = self.model.qlim;
@@ -105,7 +111,6 @@ classdef Dobot < handle
 
         end
 
-%% Calculate reach
         function get_reach(self)
             maxX = max(self.volume(:, 1)) - self.model.base(1, 4);
             minX = min(self.volume(:, 1)) - self.model.base(1, 4);
@@ -120,7 +125,7 @@ classdef Dobot < handle
             self.vertical_reach = max(maxZ, abs(minZ));
             self.arc_radius = (self.vertical_reach / 2) + ((self.transversal_reach)^2 / 8 * self.vertical_reach);
         end
-%% plot volume and stuff
+
         function plot(self)
             [k, self.computed_volume] = convhull(self.volume(:, 1), self.volume(:, 2), self.volume(:, 3));
             trisurf(k, self.volume(:, 1), self.volume(:, 2), self.volume(:, 3), 'Facecolor', 'cyan');

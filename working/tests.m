@@ -30,11 +30,14 @@ transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
 set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
 %%
-figure
+% figure
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-qHome = [0,0,0,0];
+qHome = [0,pi/2,-pi/2,0];
 
 rt1 = Dobot(ws,3);
+
+rt1.model.animate([0,0,0,0,0]);
+
 %%
 
 endeffq = rt1.model.getpos();
@@ -42,8 +45,8 @@ endeffPos = rt1.model.fkine(endeffq);
 xyz = endeffPos(1:3,4)
 
 %%
-x = 0;
-y = 0.02;
+x = 0.1;
+y = 0;
 z = 0;
 
 tr = transl(x,y,z);

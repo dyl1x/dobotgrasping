@@ -1,11 +1,13 @@
 %% Use this if the driver is on your Linux laptop
+% roslaunch dobot_magician_driver dobot_magician.launch
+
 rosinit;
 
 %% Get the current safety status of the robot
 
 safetyStatusSubscriber = rossubscriber('/dobot_magician/safety_status');
 pause(2); %Allow some time for MATLAB to start the subscriber
-currentSafetyStatus = safetyStatusSubscriber.LatestMessage.Data;
+currentSafetyStatus = safetyStatusSubscriber.LatestMessage.Data
 
 %   Stfety codes
 %     INVALID - 0
@@ -43,7 +45,7 @@ currentEndEffectorPoseMsg = endEffectorPoseSubscriber.LatestMessage;
 % Extract the position of the end effector from the received message
 currentEndEffectorPosition = [currentEndEffectorPoseMsg.Pose.Position.X,
                               currentEndEffectorPoseMsg.Pose.Position.Y,
-                              currentEndEffectorPoseMsg.Pose.Position.Z];
+                              currentEndEffectorPoseMsg.Pose.Position.Z]
 % Extract the orientation of the end effector
 currentEndEffectorQuat = [currentEndEffectorPoseMsg.Pose.Orientation.W,
                           currentEndEffectorPoseMsg.Pose.Orientation.X,
@@ -59,7 +61,7 @@ eul = quat2eul(currentEndEffectorQuat');
 % you can publish a JointTrajectory message with a single joint position,
 % as the driver currently does not support a joint trajectory
 
-jointTarget = [0,0.4,0.3,0]; % Remember that the Dobot has 4 joints by default.
+jointTarget = [0,0,0,0]; % Remember that the Dobot has 4 joints by default.
 
 [targetJointTrajPub,targetJointTrajMsg] = rospublisher('/dobot_magician/target_joint_states');
 trajectoryPoint = rosmessage("trajectory_msgs/JointTrajectoryPoint");
@@ -71,7 +73,7 @@ send(targetJointTrajPub,targetJointTrajMsg);
 %% Set target end effector state
 
 % note that this is also the original end effector pose of the Dobot without any tool attached
-endEffectorPosition = [0.2,0,0.1]; % home
+endEffectorPosition = [0,0,0]; % home
 endEffectorRotation = [0,0,0]; % home
 
 [targetEndEffectorPub,targetEndEffectorMsg] = rospublisher('/dobot_magician/target_end_effector_pose');
