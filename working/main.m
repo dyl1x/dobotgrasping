@@ -7,11 +7,14 @@ clc
 set(0,'DefaultFigureWindowStyle','docked');
 
 % 1. Capturing images from camera
-% 2. Robot Control with objects
-% 3. ROS BAGS : Load/Explore
-% 4. ROS BAGS : Visualise as point cloud
-% 5. ROS BAGS : Extract Image
-% 6. ROS BAGS : Get Image, detect shape, simulate in scene with camera
+% 2. ROS BAGS : Get Image, detect shape, simulate in scene with camera
+% 3. ROS SUBS : Subscribe to camera, detect objects, calc c2b [x, y, z]
+
+% 4. ROS BAGS : Load/Explore
+% 5. ROS BAGS : Robot Control
+% 6. ROS BAGS : Visualnetise as point cloud
+% 7. ROS BAGS : Extract Image
+
 
 %%
 idx = 22;
@@ -26,7 +29,183 @@ imshow(i)
 % imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
 % idx = idx + 1;
 
-%% 2. ROBOT CONTROL : Dobot - SNC Project
+%% 2. ROS BAGS : extract img, detect shape, place in sim
+
+load('scene_detector.mat')
+load('shape_detector.mat')
+
+%% 2. 
+
+n = 3; % num features in img
+
+filename = 'RealRobotTest1';
+bag = rosbag(strcat(['bag/', filename, '.bag']));
+
+% Show RGB Image
+RGB_data = select(bag, 'Topic', '/camera/color/image_raw');
+firstColourImage = readMessages(RGB_data, 1);
+color_img = readImage(firstColourImage{1,1});
+figure;
+imshow(color_img)
+
+% Show Depth Image
+D_data = select(bag, 'Topic', '/camera/depth/image_rect_raw');
+firstDepthImage = readMessages(D_data, 1);
+depth_img = readImage(firstDepthImage{1,1});
+
+% Show Aligned RGB-D Image
+AD_data = select(bag, 'Topic', '/camera/aligned_depth_to_color/image_raw');
+firstADepthImage = readMessages(AD_data, 1);
+aligned_img = readImage(firstADepthImage{1,1});
+
+
+% Show Camera Intrinsics
+info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
+infoMsg = readMessages(info);
+intrinsic_matrix = infoMsg{1}.K;
+
+[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
+
+[shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n);
+
+imshow(annot_color_img)
+
+shape_labels = strings(n, 1);
+figure;
+for i=1:n
+    subplot(1, n, i)
+    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
+    img_cut = color_img(y:y+h-1, x:x+w-1, :);
+    [R, map] = imresize(img_cut, [224, 224]); % image size
+    [shape_label, probability] = classify(shape_detector, R);
+    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
+    shape_labels(i) = char(shape_label);
+end
+
+figure;
+view(2);
+ws = [-0.1 0.9 -0.4 0.4 0 0.4];
+
+[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
+[ry, gy, by] = deal(-0.05, 0, 0.05);
+
+dobot = Dobot(ws, '1');
+dobot.model.teach
+hold on
+camera_offset =  [0.8, 0, 0.2];
+cam = Objects('res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
+cam.rot([0, 0, pi/2])
+cam.rot([-pi/18 0 0]) % 10 deg tilt down
+
+% base to camera visual
+trplot(eye(4), 'length', 0.3, 'color', 'r')
+tran = eye(4) * transl([0.8, 0, 0.2]);
+
+b2c_rot = troty(-pi/2) * trotz(-pi/2) * trotx(pi/18);
+b2c = tran * b2c_rot;
+
+trplot(b2c, 'length', 0.1, 'color', 'g')
+pt = shape_array(1, :)/1000;
+
+pointWRc = [b2c_rot(1:3, 1:3), pt(1:3)'; zeros(1,3), 1];
+inv_tf = inv(pointWRc) * tran;
+
+% line1_h = plot3([b2c(1, 4), ptTF(1)],[b2c(2, 4), ptTF(2)],[b2c(3, 4), ptTF(3)],'r');
+line2_h = plot3([b2c(1, 4), inv_tf(1)],[b2c(2, 4), inv_tf(2)],[b2c(3, 4), inv_tf(3)],'m');
+
+% camera to base visual
+init_c2b = [rotx(pi/18), pt'; zeros(1, 3), 1;];
+c2b = init_c2b * inv(b2c_rot);
+trplot(c2b, 'length', 0.4, 'color', 'b')
+
+for i=1:n
+    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
+    ry = ry + 0.05;
+end
+
+
+% axis equal
+camlight
+
+
+%% 3. Subscribe to camera, output world coords
+close all
+clearvars
+clc
+set(0,'DefaultFigureWindowStyle','docked');
+
+load('scene_detector.mat')
+load('shape_detector.mat')
+
+%%
+
+n = 5; % num features in img
+
+% Show RGB Image
+RGB_data = rossubscriber("/camera/color/image_raw");
+color_img = readImage(RGB_data.receive);
+figure;
+imshow(color_img)
+
+% Show Depth Image
+D_data = rossubscriber('/camera/depth/image_rect_raw');
+depth_img = readImage(D_data.receive);
+
+% Show Aligned RGB-D Image
+AD_data = rossubscriber('/camera/aligned_depth_to_color/image_raw');
+aligned_img = readImage(AD_data.receive);
+
+
+% Show Camera Intrinsics
+info = rossubscriber('/camera/aligned_depth_to_color/camera_info');
+intrinsic_matrix = info.receive.K;
+
+
+[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
+
+imshow(annot_color_img)
+
+shape_array = calc_world_coords(bbox, intrinsic_matrix);
+shape_labels = strings(n, 1);
+figure;
+for i=1:n
+    subplot(1, n, i)
+    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
+    img_cut = color_img(y:y+h-1, x:x+w-1, :);
+    [R, map] = imresize(img_cut, [224, 224]); % image size
+    [shape_label, probability] = classify(net, R);
+    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
+    shape_labels(i) = char(shape_label);
+end
+
+
+figure;
+view(2);
+ws = [-0.1 0.9 -0.4 0.4 0 0.4];
+
+[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
+[ry, gy, by] = deal(-0.05, 0, 0.05);
+
+dobot = Dobot(ws, '1');
+dobot.model.teach
+hold on
+
+cam = Objects('res/obj/intel_d435.ply', [0.8, 0, 0.2], [0, 0, 0]);
+cam.rot([0, 0, pi/2])
+
+
+for i=1:n
+    point = shape_array(n, :);
+    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
+    ry = ry + 0.05;
+end
+
+% axis equal
+camlight
+
+
+
+%% 3. ROBOT CONTROL : Dobot - SNC Project
 
 close all
 clearvars
@@ -69,7 +248,7 @@ camlight
 
 % dobot.calc_volume(10);
 % axis equal
-%% 3. ROS BAGS : Load/Explore
+%% 4. ROS BAGS : Load/Explore
 
 clc
 clear all
@@ -101,7 +280,7 @@ figure(3)
 imshow(img_gray)
 
 
-%% 4. ROS BAGS : Visualise as point cloud
+%% 5. ROS BAGS : Visualise as point cloud
 close all
 clearvars
 clc
@@ -159,7 +338,7 @@ pcobj = pointCloud(readXYZ(msg{1}),'Color',uint8(255*readRGB(msg{1})));
 % pc1_cart = [x', y', zeros(180, 1)];
 % pointcloud = pointCloud(pc1_cart, 'Color', [ones(180, 1), zeros(180, 1), zeros(180, 1)] );
 
-%% 5. ROS BAG : Extract Image
+%% 6. ROS BAG : Extract Image
 
 filename = '5ObjPCloudColorizer';
 bag = rosbag(strcat(['bag/', filename, '.bag']));
@@ -170,235 +349,4 @@ img = readImage(firstColourImage{1,1});
 imshow(img)
 imwrite(img, strcat(['working/images/scene_dataset/', filename, '.jpeg']));
 
-
-%% 6. ROS BAGS : extract img, detect shape, place in sim
-
-
-close all
-clearvars
-clc
-set(0,'DefaultFigureWindowStyle','docked');
-
-
-n = 3; % num features in img
-
-load('scene_detector.mat')
-load('shape_detector.mat')
-
-filename = 'RealRobotTest1';
-bag = rosbag(strcat(['bag/', filename, '.bag']));
-
-% Show RGB Image
-RGB_data = select(bag, 'Topic', '/camera/color/image_raw');
-firstColourImage = readMessages(RGB_data, 1);
-color_img = readImage(firstColourImage{1,1});
-figure;
-imshow(color_img)
-
-% Show Depth Image
-D_data = select(bag, 'Topic', '/camera/depth/image_rect_raw');
-firstDepthImage = readMessages(D_data, 1);
-depth_img = readImage(firstDepthImage{1,1});
-
-% Show Aligned RGB-D Image
-AD_data = select(bag, 'Topic', '/camera/aligned_depth_to_color/image_raw');
-firstADepthImage = readMessages(AD_data, 1);
-aligned_img = readImage(firstADepthImage{1,1});
-
-
-% Show Camera Intrinsics
-info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
-infoMsg = readMessages(info);
-intrinsic_matrix = infoMsg{1}.K;
-
-% Intrinsic camera matrix for the raw (distorted) images.
-%     [fx  0 cx]
-% K = [ 0 fy cy]
-%     [ 0  0  1]
-
-% Projects 3D points in the camera coordinate frame to 2D pixel
-% coordinates using the focal lengths (fx, fy) and principal point
-% (cx, cy).
-
-fx = intrinsic_matrix(1); % focal length
-fy = intrinsic_matrix(5);
-
-cx = intrinsic_matrix(3); % principle point
-cy = intrinsic_matrix(6);
-
-% [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
-[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
-
-shape_array = zeros(n, 3);
-for i=1:n
-    ix = bbox_idx(i);
-    row = bbox(ix, :);
-    [x_, y_, w_, h_] = deal(row(1), row(2), row(3), row(4));
-    [u, v] = calc_centroid(x_, y_, w_, h_); % bounding box centre pixel
-
-    d = aligned_img(v, u); % get depth at img centroid
-
-    X = ((u - cx) * d) / fx;
-    Y = ((v - cy) * d) / fy;
-    Z = d;
-
-    disp(['idx: ', num2str(ix)]);
-    disp([num2str(X), ', ', num2str(Y), ', ', num2str(Z)])
-
-    annot_color_img = insertMarker(annot_color_img, [u, v],'x', 'color', 'green', 'size', 10);
-    shape_array(i, :) = [X, Y, Z];
-end
-imshow(annot_color_img)
-
-
-shape_labels = strings(n, 1);
-figure;
-for i=1:n
-    subplot(1, n, i)
-    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
-    img_cut = color_img(y:y+h-1, x:x+w-1, :);
-    [R, map] = imresize(img_cut, [224, 224]); % image size
-    [shape_label, probability] = classify(net, R);
-    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
-    shape_labels(i) = char(shape_label);
-end
-
-
-figure;
-% Set Variables
-
-view(2);
-ws = [-0.1 0.9 -0.4 0.4 0 0.4];
-
-[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
-[ry, gy, by] = deal(-0.05, 0, 0.05);
-
-dobot = Dobot(ws, '1');
-dobot.model.teach
-hold on
-
-cam = Objects('res/obj/intel_d435.ply', [0.8, 0, 0.2], [0, 0, 0]);
-cam.rot([0, 0, pi/2])
-
-
-for i=1:n
-    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
-    ry = ry + 0.05;
-end
-
-
-% axis equal
-camlight
-
-
-%% 7. Subscribe to camera, output world coords
-
-
-close all
-clearvars
-clc
-set(0,'DefaultFigureWindowStyle','docked');
-
-n = 5; % num features in img
-
-load('scene_detector.mat')
-load('shape_detector.mat')
-
-% Show RGB Image
-RGB_data = rossubscriber("/camera/color/image_raw");
-color_img = readImage(RGB_data.receive);
-figure;
-imshow(color_img)
-
-% Show Depth Image
-D_data = rossubscriber('/camera/depth/image_rect_raw');
-depth_img = readImage(D_data.receive);
-
-% Show Aligned RGB-D Image
-AD_data = rossubscriber('/camera/aligned_depth_to_color/image_raw');
-aligned_img = readImage(AD_data.receive);
-
-
-% Show Camera Intrinsics
-info = rossubscriber('/camera/aligned_depth_to_color/camera_info');
-intrinsic_matrix = info.receive.K;
-
-% Intrinsic camera matrix for the raw (distorted) images.
-%     [fx  0 cx]
-% K = [ 0 fy cy]
-%     [ 0  0  1]
-
-% Projects 3D points in the camera coordinate frame to 2D pixel
-% coordinates using the focal lengths (fx, fy) and principal point
-% (cx, cy).
-
-fx = intrinsic_matrix(1); % focal length
-fy = intrinsic_matrix(5);
-
-cx = intrinsic_matrix(3); % principle point
-cy = intrinsic_matrix(6);
-
-% [bbox, scores, labels, annot_color_img] = test_scene_net(scene_detector, color_img, 2);
-[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
-
-shape_array = zeros(n, 3);
-for i=1:n
-    ix = bbox_idx(i);
-    row = bbox(ix, :);
-    [x_, y_, w_, h_] = deal(row(1), row(2), row(3), row(4));
-    [u, v] = calc_centroid(x_, y_, w_, h_); % bounding box centre pixel
-
-    d = aligned_img(v, u); % get depth at img centroid
-
-    X = ((u - cx) * d) / fx;
-    Y = ((v - cy) * d) / fy;
-    Z = d;
-
-    disp(['idx: ', num2str(ix)]);
-    disp([num2str(X), ', ', num2str(Y), ', ', num2str(Z)])
-
-    annot_color_img = insertMarker(annot_color_img, [u, v],'x', 'color', 'green', 'size', 10);
-    shape_array(i, :) = [X, Y, Z];
-end
-imshow(annot_color_img)
-
-
-shape_labels = strings(n, 1);
-figure;
-for i=1:n
-    subplot(1, n, i)
-    [x, y, w, h] = deal(img_cuts(i, 1), img_cuts(i, 2), img_cuts(i, 3), img_cuts(i, 4));
-    img_cut = color_img(y:y+h-1, x:x+w-1, :);
-    [R, map] = imresize(img_cut, [224, 224]); % image size
-    [shape_label, probability] = classify(net, R);
-    imshow(img_cut), title(strcat([char(shape_label), ': ', num2str(max(probability)*100, 5)]));
-    shape_labels(i) = char(shape_label);
-end
-
-
-figure;
-% Set Variables
-
-view(2);
-ws = [-0.1 0.9 -0.4 0.4 0 0.4];
-
-[so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
-[ry, gy, by] = deal(-0.05, 0, 0.05);
-
-dobot = Dobot(ws, '1');
-dobot.model.teach
-hold on
-
-cam = Objects('res/obj/intel_d435.ply', [0.8, 0, 0.2], [0, 0, 0]);
-cam.rot([0, 0, pi/2])
-
-
-for i=1:n
-    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
-    ry = ry + 0.05;
-end
-
-
-% axis equal
-camlight
 

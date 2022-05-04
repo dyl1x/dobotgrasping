@@ -43,8 +43,8 @@ while l < n
         i = i + 1;
     else
         try img_cut = color_img(y:y+h-1, x:x+w-1, :); end
-        subplot(1, 3, 1)
-        imshow(img_cut)
+%         subplot(1, 3, 1)
+%         imshow(img_cut)
 
         cut_size = size(img_cut);
 
@@ -55,17 +55,17 @@ while l < n
             mean(mean(top_half(:, :, 2))), ...
             mean(mean(top_half(:, :, 3))));
 
-        x_ = [0 1 1 0]; y_ = [0 0 1 1];
-        subplot(1, 3, 2)
-        fill(x_, y_, [thr, thg, thb]/255);
+%         x_ = [0 1 1 0]; y_ = [0 0 1 1];
+%         subplot(1, 3, 2)
+%         fill(x_, y_, [thr, thg, thb]/255);
 
         [bhr, bhg, bhb] = deal(mean(mean(bottom_half(:, :, 1))), ...
             mean(mean(bottom_half(:, :, 2))), ...
             mean(mean(bottom_half(:, :, 3))));
 
-        x_ = [0 1 1 0]; y_ = [0 0 1 1];
-        subplot(1, 3, 3)
-        fill(x_, y_, [bhr, bhg, bhb]/255);
+%         x_ = [0 1 1 0]; y_ = [0 0 1 1];
+%         subplot(1, 3, 3)
+%         fill(x_, y_, [bhr, bhg, bhb]/255);
 
         disp(['th: ', num2str(thr), ', ', num2str(thg), ', ', num2str(thb)]);
         disp(['bh: ', num2str(bhr), ', ', num2str(bhg), ', ', num2str(bhb)]);
@@ -76,10 +76,6 @@ while l < n
         
         total = sum_r + sum_g + sum_b;
         
-        rgb_r = (total/3) / sum_r;
-        rgb_g = (total/3) / sum_g;
-        rgb_b = (total/3) / sum_b;
-    
 %         if abs(1 - (rgb_r * rgb_g * rgb_b)) < 1e-3
 %             disp('minimal difference')
 %         elseif abs(1 - (rgb_r * rgb_g * rgb_b)) < 5e-2
