@@ -18,18 +18,18 @@ r2base = transl(-0.2,0,0.490)*trotz(-pi/2);
 mapSize = 0.1;
 
 clf
-map = Environments(mapSize);
+% map = Environments(mapSize);
 
 hold on
 
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-qHome = [0,0,0,0];
+qHome = [0 0 0 0 0];
 
-r1 = Dobot(ws,1);
-r1.model.base = transl(0.2,0,0.490)*trotz(pi);
+r1 = Dobot(ws, 1, 1);
+r1.model.base = transl(0.2,0,0.49)*trotz(pi);
 
-r2 = Dobot(ws,2);
-r2.model.base = transl(-0.2,0,0.490)*trotz(-pi/2);
+r2 = Dobot(ws, 2, 2);
+r2.model.base = transl(-0.2,0,0.49)*trotz(-pi/2);
 
 r1.model.animate(qHome);
 r2.model.animate(qHome);

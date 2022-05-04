@@ -1,4 +1,4 @@
-Sclassdef Dobot < handle
+classdef Dobot < handle
     properties
         model;
         
@@ -13,11 +13,11 @@ Sclassdef Dobot < handle
     end
     
     methods
-        function self = Dobot(workspace, num)    
+        function self = Dobot(workspace, num, tooltip)    
 
         self.GetDobotRobot(num);
 
-%         self.PlotAndColourRobot(workspace);%robot,workspace);
+        self.PlotAndColourRobot(workspace, tooltip);
         end
         
         %% GetDobotRobot
@@ -30,38 +30,36 @@ Sclassdef Dobot < handle
         
             L1 = Link('d', 0.138, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-135), deg2rad(135)]); % Base
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-5), deg2rad(80)]); % Rear Arm
-<<<<<<< HEAD
             L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
             L4 = Link('d', 0, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', [deg2rad(90), deg2rad(-90)]);
             L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-85), deg2rad(85)]); % End effector
-=======
-            L3 = Link('d', 0, 'a', 0.147, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
-            L4 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(0), deg2rad(0)]); % End effector
->>>>>>> main
-
+            
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
         end
         %% PlotAndColourRobot
         % Given a robot index, add the glyphs (vertices and faces) and
         % colour them in if data is available 
-        function PlotAndColourRobot(self, workspace)
+        function PlotAndColourRobot(self, workspace, tooltip)
+            % tooltip: 1 - gripper, 2 - suction cup
             for linkIndex = 0:self.model.n
-<<<<<<< HEAD
                 if (linkIndex == 4)
+                    continue
+                elseif (linkIndex == 5)
+                    if tooltip == 1
+                        disp('d5.ply')
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d5.ply','tri');
+                    else
+                        disp('d6.ply')
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d6_joined.ply','tri');
+                    end
                 else
-                    disp(strcat(['Model/d', num2str(linkIndex), '.ply']))
-                    [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../resources/dobot/d',num2str(linkIndex),'.ply'],'tri');
-                    self.model.faces{linkIndex+1} = faceData;
-                    self.model.points{linkIndex+1} = vertexData;
+                    disp(strcat(['d', num2str(linkIndex), '.ply']))
+                    [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['res/dobot/d',num2str(linkIndex),'.ply'],'tri');
+                    
                 end
-                
-=======
-                disp(strcat(['Model d', num2str(linkIndex), '.ply']))
-                [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['res/dobot/d',num2str(linkIndex),'.ply'],'tri');
                 self.model.faces{linkIndex+1} = faceData;
                 self.model.points{linkIndex+1} = vertexData;
->>>>>>> main
             end
         
             % Display robot

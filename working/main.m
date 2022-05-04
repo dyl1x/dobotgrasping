@@ -17,7 +17,7 @@ set(0,'DefaultFigureWindowStyle','docked');
 
 
 %%
-idx = 22;
+idx = 51;
 %% 1. Capture Images from camera with ros subscription 
 
 % rosinit()
@@ -38,7 +38,7 @@ load('shape_detector.mat')
 close all
 clf
 
-color_limit = 1.3;
+color_limit = 1.2;
 n = 5; % num features in img
 
 filename = 'RealRobotTest2';
@@ -92,7 +92,7 @@ ws = [-0.1 0.9 -0.4 0.4 0 0.4];
 [so, co, po, ro] = deal(0.017, 0.015, 0.023, 0.028);
 [ry, gy, by] = deal(-0.05, 0, 0.05);
 
-dobot = Dobot(ws, '1');
+dobot = Dobot(ws, '1', 2);
 hold on
 
 camera_offset =  [0.7, 0, 0.1];
