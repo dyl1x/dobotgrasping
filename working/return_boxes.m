@@ -1,4 +1,4 @@
-function [bboxs, B, C,  scores, labels, color_img, img_cuts, n] = return_boxes(detector, color_img, aligned_img, n)
+function [bboxs, B, C,  scores, labels, color_img, img_cuts, n] = return_boxes(detector, color_img, aligned_img, n, color_limit)
 
 [bboxs, scores, labels] = detect(detector, color_img, 'MiniBatchSize', 32);
 
@@ -41,8 +41,18 @@ while l < n
     elseif y + h - 1 > img_size(1)
         disp('out of bounds yh: ', num2str(y+h-1))
         i = i + 1;
+    elseif y <= 0
+        disp('out of bounds y <= 0')
+        i = i + 1;
+    elseif x <= 0
+        disp('out of bounds x <= 0')
+        i = i + 1;
     else
-        try img_cut = color_img(y:y+h-1, x:x+w-1, :); end
+        try 
+            img_cut = color_img(y:y+h-1, x:x+w-1, :);
+        catch ME
+            disp(ME);
+        end
 %         subplot(1, 3, 1)
 %         imshow(img_cut)
 
@@ -82,19 +92,19 @@ while l < n
 %             disp('some diff')
 %         end
 
-        if sum_r / (total / 3) > 1.4
+        if sum_r / (total / 3) > color_limit
             col = ['' ...
                 'likely red'];
             disp(col);
             disp(['R: ', num2str(sum_r), ', ratio: ', num2str(sum_r/(total/3))]);
             cont = true;
-        elseif sum_g / (total / 3) > 1.4
+        elseif sum_g / (total / 3) > color_limit
             col = ['' ...
                 'likely green'];
             disp(col);
             disp(['G: ', num2str(sum_g), ', ratio: ', num2str(sum_g/(total/3))]);
             cont = true;
-        elseif sum_b / (total / 3) > 1.4
+        elseif sum_b / (total / 3) > color_limit
             col = ['' ...
                 'likely blue'];
             disp(col);

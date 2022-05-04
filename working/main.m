@@ -35,10 +35,13 @@ load('scene_detector.mat')
 load('shape_detector.mat')
 
 %% 2. 
+close all
+clf
 
-n = 3; % num features in img
+color_limit = 1.3;
+n = 5; % num features in img
 
-filename = 'RealRobotTest1';
+filename = 'RealRobotTest2';
 bag = rosbag(strcat(['bag/', filename, '.bag']));
 
 % Show RGB Image
@@ -64,7 +67,7 @@ info = select(bag, 'Topic', '/camera/aligned_depth_to_color/camera_info');
 infoMsg = readMessages(info);
 intrinsic_matrix = infoMsg{1}.K;
 
-[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n);
+[bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n, color_limit);
 
 [shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n);
 
@@ -90,39 +93,35 @@ ws = [-0.1 0.9 -0.4 0.4 0 0.4];
 [ry, gy, by] = deal(-0.05, 0, 0.05);
 
 dobot = Dobot(ws, '1');
-dobot.model.teach
 hold on
-camera_offset =  [0.8, 0, 0.2];
+
+camera_offset =  [0.7, 0, 0.1];
 cam = Objects('res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
 cam.rot([0, 0, pi/2])
 cam.rot([-pi/18 0 0]) % 10 deg tilt down
 
 % base to camera visual
 trplot(eye(4), 'length', 0.3, 'color', 'r')
-tran = eye(4) * transl([0.8, 0, 0.2]);
+% trplot(eye(4) * transl(camera_offset), 'length', 0.1, 'color', 'm')
+
 
 b2c_rot = troty(-pi/2) * trotz(-pi/2) * trotx(pi/18);
-b2c = tran * b2c_rot;
+b2c = eye(4) * transl(camera_offset) * b2c_rot;
 
-trplot(b2c, 'length', 0.1, 'color', 'g')
-pt = shape_array(1, :)/1000;
+% trplot(b2c, 'length', 0.1, 'color', 'g')
 
-pointWRc = [b2c_rot(1:3, 1:3), pt(1:3)'; zeros(1,3), 1];
-inv_tf = inv(pointWRc) * tran;
-
-% line1_h = plot3([b2c(1, 4), ptTF(1)],[b2c(2, 4), ptTF(2)],[b2c(3, 4), ptTF(3)],'r');
-line2_h = plot3([b2c(1, 4), inv_tf(1)],[b2c(2, 4), inv_tf(2)],[b2c(3, 4), inv_tf(3)],'m');
-
-% camera to base visual
-init_c2b = [rotx(pi/18), pt'; zeros(1, 3), 1;];
-c2b = init_c2b * inv(b2c_rot);
-trplot(c2b, 'length', 0.4, 'color', 'b')
 
 for i=1:n
-    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [0.4 ry so], [0 0 0]);
-    ry = ry + 0.05;
-end
+    pt_raw = shape_array(i, :);
+    pt = pt_raw / 1000;
+    
+    c2p = [b2c_rot(1:3, 1:3), pt(1:3)'; zeros(1,3), 1];
+    ptWorld = b2c * c2p;
+    disp([char(shape_labels(i)), ': ', num2str([ptWorld(1:3, 4)]')])
+    line2_h = plot3([b2c(1, 4), ptWorld(1, 4)], [b2c(2, 4), ptWorld(2, 4)], [b2c(3, 4), ptWorld(3, 4)], 'm');
 
+    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [ptWorld(1:3, 4)]', [0 0 0]);
+end
 
 % axis equal
 camlight
