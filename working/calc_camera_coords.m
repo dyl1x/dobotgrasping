@@ -24,7 +24,7 @@ function [shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, alig
     
         d = aligned_img(v, u); % get depth at img centroid
     
-        X = ((u - cx) * d) / fx;
+        X = ((u - cx) * d) / fx; % image point u - principal point cx * depth / focal length
         Y = ((v - cy) * d) / fy;
         Z = d;
     

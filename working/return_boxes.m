@@ -133,20 +133,26 @@ while l < n
             disp(['cx: ', num2str(cx), ', cy: ', num2str(cy)])
         
             depth = aligned_img(cy, cx);
-            disp(['Depth at ', num2str(cx), ', ', num2str(cy), ' == ', num2str(depth), 'mm']);
-        
-        
-            disp(size(img_cut))
-            imshow(img_cut), title(annotation);
-            img_cuts(l + 1, :) = [x, y, w, h];
-        
-            C(l + 1) = B(i);
-            i = i + 1; % loop through ranked scores index B but retain idx for bbox
-            l = l + 1;
+            if depth > 3000
+                disp(['Depth at ', num2str(cx), ', ', num2str(cy), ' == ', num2str(depth), 'mm > 3m continue']);
+                i = i + 1;
+            else
+
+                disp(['Depth at ', num2str(cx), ', ', num2str(cy), ' == ', num2str(depth), 'mm']);
             
-            disp(['i: ', num2str(i), ', l: ', num2str(l), ', n: ', num2str(n)]);
-            disp(['' ...
-                ''])
+            
+                disp(size(img_cut))
+                imshow(img_cut), title(annotation);
+                img_cuts(l + 1, :) = [x, y, w, h];
+            
+                C(l + 1) = B(i);
+                i = i + 1; % loop through ranked scores index B but retain idx for bbox
+                l = l + 1;
+                
+                disp(['i: ', num2str(i), ', l: ', num2str(l), ', n: ', num2str(n)]);
+                disp(['' ...
+                    ''])
+            end
         else
             disp(['no color, skipping bbox: i=', num2str(i)]);
             i = i + 1;

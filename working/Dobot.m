@@ -31,8 +31,8 @@ classdef Dobot < handle
             L1 = Link('d', 0.138, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-135), deg2rad(135)]); % Base
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-5), deg2rad(80)]); % Rear Arm
             L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
-            L4 = Link('d', 0, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', [deg2rad(90), deg2rad(-90)]);
-            L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-85), deg2rad(85)]); % End effector
+            L4 = Link('d', 0, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', [deg2rad(-90), deg2rad(90)]);
+            L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(0), deg2rad(0)]); % End effector
             
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
@@ -51,7 +51,7 @@ classdef Dobot < handle
                         [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d5.ply','tri');
                     else
                         disp('d6.ply')
-                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d6_joined.ply','tri');
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d6.ply','tri');
                     end
                 else
                     disp(strcat(['d', num2str(linkIndex), '.ply']))

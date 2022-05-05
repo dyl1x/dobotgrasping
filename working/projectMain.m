@@ -10,8 +10,8 @@ set(0,'DefaultFigureWindowStyle','docked');
 
 %% Inputs
 %preset the base position of the ur5 and ur3
-r1base = transl(0.2,0,0.490)*trotz(pi);
-r2base = transl(-0.2,0,0.490)*trotz(-pi/2);
+r1base = transl(0.2,0,0.490) * trotz(pi);
+r2base = transl(-0.2,0,0.490) * trotz(-pi/2);
 
 % size of fenced room, we assume length = width for simplicity
 % height is a constant value of 3m.
