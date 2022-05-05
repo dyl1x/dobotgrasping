@@ -9,3 +9,9 @@ imshow(cropimg)
 cp = detectHarrisFeatures(cropimg);
 
 %1,2,15,31,32
+
+leftTop = cp.Location(1,:);
+leftBot = cp.Location(2,:);
+rightTop = cp.Location(15,:);
+rightBot = cp.Location(31,:);
+cent = cp.Location(32,:);
