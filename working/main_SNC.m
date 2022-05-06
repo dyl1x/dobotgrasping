@@ -52,7 +52,7 @@ filename = 'RealRobotTest1'; % n = 3
 bag = rosbag(strcat(['bag/', filename, '.bag']));
 
 % camera transform
-camera_offset =  [0.65, 0, 0.1];
+camera_offset =  [0.6, 0, 0.1];
 cam_rot = deg2rad(-8); % x rot if cam facing down toward surface
 
 % Get RGB Image
@@ -124,7 +124,8 @@ trplot(b2c, 'length', 0.1, 'color', 'm')
 [objects, world_coords, world_transforms] = camera2base(shape_array, shape_labels, b2c, b2c_rot, n);
 
 % animate pick and place control
-q0 = [0 0 0 pi 0];
+% q0 = [0 pi/4 pi/2 pi/4 0];
+q0 = [0 pi/4 pi/2 pi/4 0];
 dobot.model.animate(q0);
 ee = dobot.model.fkine(q0);
 
@@ -156,8 +157,7 @@ for i=1:n
     end
     
     q4 = dobot.model.getpos;
-    q5 = dobot.model.ikcon(ee, q4);
-    qmatrix = calc_trap_qmatrix(q4, q5, steps);
+    qmatrix = calc_trap_qmatrix(q4, q0, steps);
     
     for j=1:size(qmatrix)
         dobot.model.animate(qmatrix(j,:));
@@ -176,12 +176,12 @@ clc
 load('scene_detector.mat')
 load('shape_detector.mat')
 
-color_limit = 1.3;
-n = 3; % num features in img
+color_limit = 1.2;
+n = 6; % num features in img
 
 % camera translation
-camera_offset =  [0.7, 0, 0.1];
-cam_rot = deg2rad(-3); % x rot if cam facing down toward surface
+camera_offset =  [0.7, 0, 0.06];
+cam_rot = deg2rad(0); % x rot if cam facing down toward surface
 
 
 % Show RGB Image
@@ -228,36 +228,23 @@ ws = [-0.1 0.9 -0.4 0.4 0 0.4];
 dobot = Dobot(ws, '1', 2);
 hold on
 
-
 cam = Objects('res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
 cam.rot([0, 0, pi/2])
 cam.rot([cam_rot 0 0]) % 10 deg tilt down
 
-% base to camera visual
+axis equal
+camlight
+
+% base to camera frame
 % trplot(eye(4), 'length', 0.3, 'color', 'r')
 trplot(eye(4) * transl(camera_offset), 'length', 0.1, 'color', 'g')
+b2c_rot = troty(-pi/2) * trotz(pi/2) * trotx(cam_rot); % rotation component
+b2c = eye(4) * transl(camera_offset) * b2c_rot; % base to camera
+trplot(b2c, 'length', 0.1, 'color', 'm')
 
-b2c_rot = troty(-pi/2) * trotz(pi/2) * trotx(cam_rot);
-b2c = eye(4) * transl(camera_offset) * b2c_rot;
+% calculate world points
+[objects, world_coords, world_transforms] = camera2base(shape_array, shape_labels, b2c, b2c_rot, n);
 
-trplot(b2c, 'length', 0.1, 'color', ' m')
-
-world_coords = zeros(1, n);
-world_transforms = zeros(1, n);
-for i=1:n
-    pt_raw = shape_array(i, :);
-    pt = pt_raw / 1000;
-    
-    c2p = [b2c_rot(1:3, 1:3), pt(1:3)'; zeros(1,3), 1];
-    ptWorld = b2c * c2p;
-    disp([char(shape_labels(i)), ': ', num2str([ptWorld(1:3, 4)]')])
-    world_coords(i) = ptWorld(1:3, 4);
-    world_transforms(i) = ptWorld;
-
-    line2_h = plot3([b2c(1, 4), ptWorld(1, 4)], [b2c(2, 4), ptWorld(2, 4)], [b2c(3, 4), ptWorld(3, 4)], 'm');
-
-    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [ptWorld(1:3, 4)]', [0 0 0]);
-end
 
 axis equal
 camlight
