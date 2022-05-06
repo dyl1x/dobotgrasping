@@ -40,7 +40,7 @@ rt1 = Dobot(ws,1, 2);
 %%
 q2 = deg2rad(20);
 q3 = deg2rad(-20);
-rt1.model.animate([0,q2,q3,q4(q2,q3),0]);
+rt1.model.plot([0,q2,q3,q4(q2,q3),0]);
 
 %%
 
