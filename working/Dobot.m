@@ -28,11 +28,11 @@ classdef Dobot < handle
             pause(0.01);
             self.name = ['Dobot_', num2str(num, '%d')];
         
-            L1 = Link('d', 0.138, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', [deg2rad(-135), deg2rad(135)]); % Base
-            L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-5), deg2rad(80)]); % Rear Arm
-            L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(-45), deg2rad(45)]); % Forearm
-            L4 = Link('d', 0, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', [deg2rad(-90), deg2rad(90)]);
-            L5 = Link('d', 0.061, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', [deg2rad(0), deg2rad(0)]); % End effector
+            L1 = Link('d', 0.1, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', deg2rad([-135, 135]));      % Base
+            L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([5, 85]));           % Rear Arm
+            L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 3*pi/4, 'qlim', deg2rad([15, 170]));     % Forearm
+            L4 = Link('d', 0, 'a', 0.03, 'alpha', -pi/2, 'offset', 1*pi/4, 'qlim', deg2rad([-90, 90]));
+            L5 = Link('d', -0.06, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([0, 0]));            % End effector
             
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
@@ -41,8 +41,8 @@ classdef Dobot < handle
         % Given a robot index, add the glyphs (vertices and faces) and
         % colour them in if data is available 
         function PlotAndColourRobot(self, workspace, tooltip)
-            % tooltip: 1 - gripper, 2 - suction cup
-            for linkIndex = 0:self.model.n
+            % tooltip: 1 - gripper (d5), 2 - suction cup (d6)
+            for linkIndex = 0:self.model.n % d0.ply - d6.ply
                 if (linkIndex == 4)
                     continue
                 elseif (linkIndex == 5)
