@@ -22,45 +22,43 @@ clf
 
 hold on
 
-ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-qHome = [0 0 0 0 0];
+ws = [-0.5 0.5 -0.5 0.5 0 0.8]; % q2: 0-pi/2 q3: pi/2-pi
+[q2_, q3_] = deal(pi/4, 3*pi/4);
+q0 = [-3*pi/8 q2_ q3_ constrain_joint4(q2_, q3_) 0];
 
-r1 = Dobot(ws, 1, 1);
-r1.model.base = transl(0.2,0,0.49)*trotz(pi);
+r1 = Dobot(ws, 1, 2);
+r1.model.base = transl(0.2,0,0.49) * trotz(pi);
 
 r2 = Dobot(ws, 2, 2);
-r2.model.base = transl(-0.2,0,0.49)*trotz(-pi/2);
+r2.model.base = transl(-0.15,0,0.49) * trotz(-3*pi/4);
 
-r1.model.animate(qHome);
-r2.model.animate(qHome);
+r1.model.animate(q0);
+r2.model.animate(q0);
 
 drawnow();
 axis equal
 hold off
 
-%% add pcbs
+% add pcbs
 hold on
 pcb1 = PCB(1,transl(-0.375,0,0.5));
 pcb2 = PCB(2,transl(-0.375,0.3,0.5));
 pcb3 = PCB(3,transl(-0.375,0.5,0.5));
 
-%% set quide positions
-qPickup = [-1.5551,    0.0017,   -0.1257,         0];
-qmid = [0,    0.4171,   -0.4869,         0];
-qdrop = [1.5708,    0.0017,   -0.1257,         0];
+% set quide positions
+qPickup = [-1.5551, 0.0017, -0.1257, 0];
+qmid = [0, 0.4171, -0.4869, 0];
+qdrop = [1.5708, 0.0017, -0.1257, 0];
 
-%% pick and place pcb 1
-r2qCurrent = r2.model.getpos;
-r2EndPos = r2.model.fkine(r2qCurrent);
-goalEndPos = pcb1.pose;
-qGoal = r2.model.ikcon(goalEndPos);
-qmatrix = jtraj(r2qCurrent,qGoal,50);
 
+% pick and place pcb 1
+q1 = r2.model.ikcon(pcb1.pose, q0);
+qmatrix = calc_trap_qmatrix(q0, q1, 10);
 for i=1:size(qmatrix)
    r2.model.animate(qmatrix(i,:)); 
-   drawnow();
    pause(0.01);
 end
+
 
 %% lift up
 r2qCurrent = r2.model.getpos;
