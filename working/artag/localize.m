@@ -53,11 +53,14 @@ hold on
 plot(cp2.Location(:,1),cp2.Location(:,2),'*g');
 
 %%
+
+
+%%
 i1gs = img4;
 i2gs = sample;
 % feature decriptors, corresponding location
-[features1, validPoints1] = extractFeatures(i1gs, cp, 'Method' , 'Block', 'BlockSize',3);
-[features2, validPoints2] = extractFeatures(i2gs, cp2, 'Method' , 'Block', 'BlockSize',3);
+[features1, validPoints1] = extractFeatures(i1gs, cp, 'Method' , 'Block', 'BlockSize',7);
+[features2, validPoints2] = extractFeatures(i2gs, cp2, 'Method' , 'Block', 'BlockSize',7);
 
 % match features
 indexPairs = matchFeatures(features1,features2);
@@ -71,7 +74,7 @@ showMatchedFeatures(i1gs,i2gs,matchedPoints1,matchedPoints2,'montage')
 
 %%
 
-[id,loco] = readAprilTag(sample);
+[id,loco,fam] = readAprilTag(sample);
 l = loco(:,:,13);
 plot(l(:,1),l(:,2),'*g');
 
