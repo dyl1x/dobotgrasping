@@ -22,7 +22,7 @@ function varargout = untitled(varargin)
 
 % Edit the above text to modify the response to help untitled
 
-% Last Modified by GUIDE v2.5 03-May-2022 08:46:20
+% Last Modified by GUIDE v2.5 07-May-2022 20:44:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,9 +78,9 @@ function varargout = untitled_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
+% --- Executes on button press in map.
+function map_Callback(hObject, eventdata, handles)
+% hObject    handle to map (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -92,9 +92,9 @@ data.map = map;
 guidata(hObject,data);
 
 
-% --- Executes on button press in pushbutton2.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
+% --- Executes on button press in stuff.
+function stuff_Callback(hObject, eventdata, handles)
+% hObject    handle to stuff (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 hold on;
@@ -115,25 +115,25 @@ data.r2 = r2;
 guidata(hObject,data);
 
 
-% --- Executes on button press in pushbutton6.
-function pushbutton6_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton6 (see GCBO)
+% --- Executes on button press in simstarter.
+function simstarter_Callback(hObject, eventdata, handles)
+% hObject    handle to simstarter (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in togglebutton1.
-function togglebutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to togglebutton1 (see GCBO)
+% --- Executes on button press in estop.
+function estop_Callback(hObject, eventdata, handles)
+% hObject    handle to estop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of togglebutton1
+% Hint: get(hObject,'Value') returns toggle state of estop
 
 
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton3 (see GCBO)
+% --- Executes on button press in connect_b.
+function connect_b_Callback(hObject, eventdata, handles)
+% hObject    handle to connect_b (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -141,5 +141,110 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q1minus.
+function q1minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q1minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q2minus.
+function q2minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q2minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q3minus.
+function q3minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q3minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q4minus.
+function q4minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q4minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in xminus.
+function xminus_Callback(hObject, eventdata, handles)
+% hObject    handle to xminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in yminus.
+function yminus_Callback(hObject, eventdata, handles)
+% hObject    handle to yminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in zminus.
+function zminus_Callback(hObject, eventdata, handles)
+% hObject    handle to zminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q1plus.
+function q1plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q1plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q2plus.
+function q2plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q2plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q3plus.
+function q3plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q3plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q4plus.
+function q4plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q4plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in xplus.
+function xplus_Callback(hObject, eventdata, handles)
+% hObject    handle to xplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in yplus.
+function yplus_Callback(hObject, eventdata, handles)
+% hObject    handle to yplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in zplus.
+function zplus_Callback(hObject, eventdata, handles)
+% hObject    handle to zplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in cont.
+function cont_Callback(hObject, eventdata, handles)
+% hObject    handle to cont (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
