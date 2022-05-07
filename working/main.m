@@ -31,8 +31,8 @@ imshow(i)
 
 %% 2. ROS BAGS : extract img, detect shape, place in sim
 
-load('scene_detector.mat')
-load('shape_detector.mat')
+load('../scene_detector.mat')
+load('../shape_detector.mat')
 
 %% 2. 
 close all
@@ -41,7 +41,7 @@ clf
 color_limit = 1.2;
 n = 5; % num features in img
 
-filename = 'RealRobotTest2';
+filename = 'May6ARtag1';
 bag = rosbag(strcat(['bag/', filename, '.bag']));
 
 % Show RGB Image
