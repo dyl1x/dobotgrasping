@@ -48,14 +48,14 @@ classdef Dobot < handle
                 elseif (linkIndex == 5)
                     if tooltip == 1
                         disp('d5.ply')
-                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('../res/dobot/d5.ply','tri');
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d5.ply','tri');
                     else
                         disp('d6.ply')
-                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('../res/dobot/d6.ply','tri');
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('res/dobot/d6.ply','tri');
                     end
                 else
                     disp(strcat(['d', num2str(linkIndex), '.ply']))
-                    [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../res/dobot/d',num2str(linkIndex),'.ply'],'tri');
+                    [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['res/dobot/d',num2str(linkIndex),'.ply'],'tri');
                     
                 end
                 self.model.faces{linkIndex+1} = faceData;
