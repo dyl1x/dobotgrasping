@@ -22,7 +22,7 @@ function varargout = untitled(varargin)
 
 % Edit the above text to modify the response to help untitled
 
-% Last Modified by GUIDE v2.5 08-May-2022 00:23:54
+% Last Modified by GUIDE v2.5 08-May-2022 18:15:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -175,7 +175,8 @@ function connect_b_Callback(hObject, eventdata, handles)
 % hObject    handle to connect_b (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-s = serialport('/dev/ttyACM0',9600);
+path = get(hObject,'String');
+s = serialport(path,9600);
 handles.s = s;
 
 guidata(hObject,handles);
@@ -192,15 +193,11 @@ function q1minus_Callback(hObject, eventdata, handles)
 % hObject    handle to q1minus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text3, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,1) = q(1,1)-0.1;
+handles.r1.model.animate(q);
 
-txt = txt - 0.1;
-set(handles.text3, 'String',txt);
-
-handles.q1 = txt;
-
-updatebotq(hObject,handles);
+set(handles.text3, 'String',q(1,1));
 
 guidata(hObject,handles);
 
@@ -209,16 +206,12 @@ function q2minus_Callback(hObject, eventdata, handles)
 % hObject    handle to q2minus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text4, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,2) = q(1,2)-0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
 
-txt = txt - 0.1;
-set(handles.text4, 'String',txt);
-
-handles.q2 = txt;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-
-updatebotq(hObject,handles);
+set(handles.text4, 'String',q(1,2));
 
 guidata(hObject,handles);
 
@@ -229,16 +222,12 @@ function q3minus_Callback(hObject, eventdata, handles)
 % hObject    handle to q3minus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text5, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,3) = q(1,3)-0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
 
-txt = txt - 0.1;
-set(handles.text5, 'String',txt);
-
-handles.q3 = txt;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-
-updatebotq(hObject,handles);
+set(handles.text5, 'String',q(1,3));
 
 guidata(hObject,handles);
 
@@ -248,15 +237,11 @@ function q4minus_Callback(hObject, eventdata, handles)
 % hObject    handle to q4minus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text6, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,5) = q(1,5)-0.1;
+handles.r1.model.animate(q);
 
-txt = txt - 0.1;
-set(handles.text6, 'String',txt);
-
-handles.q5 = txt;
-
-updatebotq(hObject,handles);
+set(handles.text6, 'String',q(1,5));
 
 guidata(hObject,handles);
 
@@ -266,15 +251,18 @@ function xminus_Callback(hObject, eventdata, handles)
 % hObject    handle to xminus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text7, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
 
-txt = txt - 0.001;
+tr(1,4) = tr(1,4)-0.01;
+
+txt = tr(1,4);
 set(handles.text7, 'String',txt);
 
-handles.px = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -284,15 +272,18 @@ function yminus_Callback(hObject, eventdata, handles)
 % hObject    handle to yminus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text8, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
 
-txt = txt - 0.001;
+tr(2,4) = tr(2,4)-0.01;
+
+txt = tr(2,4);
 set(handles.text8, 'String',txt);
 
-handles.py = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -301,15 +292,18 @@ function zminus_Callback(hObject, eventdata, handles)
 % hObject    handle to zminus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text9, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
 
-txt = txt - 0.001;
+tr(3,4) = tr(3,4)-0.01;
+
+txt = tr(3,4);
 set(handles.text9, 'String',txt);
 
-handles.pz = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -318,15 +312,11 @@ function q1plus_Callback(hObject, eventdata, handles)
 % hObject    handle to q1plus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text3, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,1) = q(1,1)+0.1;
+handles.r1.model.animate(q);
 
-txt = txt + 0.1;
-set(handles.text3, 'String',txt);
-
-handles.q1 = txt;
-
-updatebotq(hObject,handles);
+set(handles.text3, 'String',q(1,1));
 
 guidata(hObject,handles);
 
@@ -336,16 +326,12 @@ function q2plus_Callback(hObject, eventdata, handles)
 % hObject    handle to q2plus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text4, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,2) = q(1,2)+0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
 
-txt = txt + 0.1;
-set(handles.text4, 'String',txt);
-
-handles.q2 = txt;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-
-updatebotq(hObject,handles);
+set(handles.text4, 'String',q(1,2));
 
 guidata(hObject,handles);
 
@@ -355,16 +341,12 @@ function q3plus_Callback(hObject, eventdata, handles)
 % hObject    handle to q3plus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text5, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,3) = q(1,3)+0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
 
-txt = txt + 0.1;
-set(handles.text5, 'String',txt);
-
-handles.q3 = txt;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-
-updatebotq(hObject,handles);
+set(handles.text5, 'String',q(1,3));
 
 guidata(hObject,handles);
 
@@ -374,15 +356,11 @@ function q4plus_Callback(hObject, eventdata, handles)
 % hObject    handle to q4plus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text6, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+q(1,5) = q(1,5)+0.1;
+handles.r1.model.animate(q);
 
-txt = txt + 0.1;
-set(handles.text6, 'String',txt);
-
-handles.q5 = txt;
-
-updatebotq(hObject,handles);
+set(handles.text6, 'String',q(1,5));
 
 guidata(hObject,handles);
 
@@ -392,15 +370,20 @@ function xplus_Callback(hObject, eventdata, handles)
 % hObject    handle to xplus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text7, 'String');
-txt = str2double(txt);
 
-txt = txt + 0.001;
+
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(1,4) = tr(1,4)+0.01;
+
+txt = tr(1,4);
 set(handles.text7, 'String',txt);
 
-handles.px = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -410,15 +393,18 @@ function yplus_Callback(hObject, eventdata, handles)
 % hObject    handle to yplus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text8, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
 
-txt = txt + 0.001;
+tr(2,4) = tr(2,4)+0.01;
+
+txt = tr(1,4);
 set(handles.text8, 'String',txt);
 
-handles.py = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -428,15 +414,18 @@ function zplus_Callback(hObject, eventdata, handles)
 % hObject    handle to zplus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-txt = get(handles.text9, 'String');
-txt = str2double(txt);
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
 
-txt = txt + 0.001;
+tr(3,4) = tr(3,4)+0.01;
+
+txt = tr(3,4);
 set(handles.text9, 'String',txt);
 
-handles.pz = txt;
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
 
-updatebotp(hObject,handles);
+% updatebotp(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -458,78 +447,6 @@ end
 guidata(hObject,handles);
 
 
-% --- Executes on button press in applybtn.
-function applybtn_Callback(hObject, eventdata, handles)
-% hObject    handle to applybtn (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-txt1 = get(handles.text9, 'String');
-txt1 = str2double(txt1);
-txt2 = get(handles.text9, 'String');
-txt2 = str2double(txt2);
-txt3 = get(handles.text9, 'String');
-txt3 = str2double(txt3);
-txt4 = get(handles.text9, 'String');
-txt4 = str2double(txt4);
-
-txt5 = get(handles.text9, 'String');
-txt5 = str2double(txt5);
-txt6 = get(handles.text9, 'String');
-txt6 = str2double(txt6);
-txt7 = get(handles.text9, 'String');
-txt7 = str2double(txt7);
-
-handles.q1 = txt1;
-handles.q2 = txt2;
-handles.q3 = txt3;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-handles.q5 = txt4;
-
-
-handles.px = txt5;
-handles.py = txt6;
-handles.pz = txt7;
-guidata(hObject,handles);
-
-function updatebotq(hObject,handles)
-
-% updates the plot and the xyz values based on the q values when called
-q = [handles.q1,handles.q2,handles.q3,handles.q4,handles.q5];
-handles.r1.model.animate(q);
-
-qpos = handles.r1.model.getpos
-pos = handles.r1.model.fkine(qpos)
-
-% update xyz variables
-handles.px = pos(1,4);
-handles.py = pos(2,4);
-handles.pz = pos(3,4);
-
-set(handles.text7, 'String',handles.px);
-set(handles.text8, 'String',handles.py);
-set(handles.text9, 'String',handles.pz);
-
-guidata(hObject,handles);
-
-function updatebotp(hObject,handles)
-% updates the plot and the q values based on the xyz values when called
-qnew = handles.r1.model.ikcon(transl(handles.px,handles.py,handles.pz));
-handles.q1 = qnew(1,1);
-handles.q2 = qnew(1,2);
-handles.q3 = qnew(1,3);
-handles.q4 = constrain_joint4(qnew(1,2),qnew(1,3));
-handles.q5 = qnew(1,5);
-
-q = [handles.q1,handles.q2,handles.q3,handles.q4,handles.q5];
-handles.r1.model.animate(q);
-
-set(handles.text3, 'String',handles.q1);
-set(handles.text4, 'String',handles.q2);
-set(handles.text5, 'String',handles.q3);
-set(handles.text6, 'String',handles.q5);
-
-guidata(hObject,handles);
-
 function checkhardwarestop(hObject,handles)
 % polls serial port to see the state of the estop
 flush(s);
@@ -548,3 +465,26 @@ if data == "0"
 end
 
 guidata(hObject,handles)
+
+
+
+function path_Callback(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of path as text
+%        str2double(get(hObject,'String')) returns contents of path as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function path_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
