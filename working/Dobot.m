@@ -9,6 +9,7 @@ classdef Dobot < handle
         vertical_reach;
         arc_radius;
         name;
+        test_qmatrix;
 
     end
     
@@ -28,12 +29,12 @@ classdef Dobot < handle
             pause(0.01);
             self.name = ['Dobot_', num2str(num, '%d')];
         
-            L1 = Link('d', 0.1, 'a', 0, 'alpha', pi/2, 'offset', 0, 'qlim', deg2rad([-135, 135]));      % Base
-            L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([5, 85]));           % Rear Arm
-            L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 3*pi/4, 'qlim', deg2rad([15, 170]));     % Forearm
-            L4 = Link('d', 0, 'a', 0.03, 'alpha', -pi/2, 'offset', 1*pi/4, 'qlim', deg2rad([-90, 90]));
-            L5 = Link('d', -0.06, 'a', 0, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([0, 0]));            % End effector
-            
+            L1 = Link('d', 0.1, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', deg2rad([-135, 135]));      % Base
+            L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', -pi/2, 'qlim', deg2rad([5, 85]));           % Rear Arm
+            L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([15, 170]));         % Forearm
+            L4 = Link('d', 0, 'a', -0.04, 'alpha', -pi/2, 'offset', pi/2, 'qlim', deg2rad([-90, 90]));
+            L5 = Link('d', -0.05, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([0, 0]));            % End effector
+           
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
         end
@@ -88,6 +89,7 @@ classdef Dobot < handle
                 end                 
             end
         end
+
         function calc_volume(self, degrees)
             steps = deg2rad(degrees);
             qlim = self.model.qlim;
@@ -140,6 +142,53 @@ classdef Dobot < handle
             [k, self.computed_volume] = convhull(self.volume(:, 1), self.volume(:, 2), self.volume(:, 3));
             trisurf(k, self.volume(:, 1), self.volume(:, 2), self.volume(:, 3), 'Facecolor', 'cyan');
 
+        end
+
+        function test_pos(self, q)
+
+            q(:, :, 1) = [0 1.13 1.84 0.18 0];
+            q(:, :, 2) = [0 0.98 1.92 0.24 0];
+            q(:, :, 3) = [0 0.82 1.99 0.32 0];
+            q(:, :, 4) = [0 0.67 2.04 0.42 0];
+            q(:, :, 5) = [0 0.52 2.08 0.54 0];
+            q(:, :, 6) = [0 0.38 2.09 0.67 0];
+            
+            q(:, :, 7) = [0 1.17 1.68 0.29 0];
+            q(:, :, 8) = [0 1.02 1.77 0.35 0];
+            q(:, :, 9) = [0 0.88 1.84 0.42 0];
+            q(:, :, 10) = [0 0.74 1.88 0.51 0];
+            q(:, :, 11) = [0 0.61 1.91 0.62 0];
+            q(:, :, 12) = [0 0.49 1.92 0.73 0];
+            
+            q(:, :, 13) = [0 1.22 1.52 0.41 0];
+            q(:, :, 14) = [0 1.08 1.6 0.46 0];
+            q(:, :, 15) = [0 0.95 1.67 0.52 0];
+            q(:, :, 16) = [0 0.82 1.71 0.6 0];
+            q(:, :, 17) = [0 0.71 1.74 0.7 0];
+            q(:, :, 18) = [0 0.59 1.75 0.8 0];
+            
+            q(:, :, 19) = [0 1.28 1.33 0.53 0];
+            q(:, :, 20) = [0 1.15 1.42 0.57 0];
+            q(:, :, 21) = [0 1.03 1.48 0.63 0];
+            q(:, :, 22) = [0 0.91 1.53 0.7 0];
+            q(:, :, 23) = [0 0.8 1.56 0.78 0];
+            q(:, :, 24) = [0 0.7 1.56 0.87 0];
+            
+            q(:, :, 25) = [0 1.37 1.11 0.66 0];
+            q(:, :, 26) = [0 1.25 1.2 0.69 0];
+            q(:, :, 27) = [0 1.13 1.27 0.74 0];
+            q(:, :, 28) = [0 1.02 1.32 0.8 0];
+            q(:, :, 29) = [0 0.91 1.35 0.88 0];
+            q(:, :, 30) = [0 0.82 1.36 0.96 0];
+            
+            q(:, :, 31) = [0 1.4 0.99 0.76 0];
+            q(:, :, 32) = [0 1.36 0.95 0.83 0];
+            q(:, :, 33) = [0 1.24 1.03 0.87 0];
+            q(:, :, 34) = [0 1.14 1.08 0.92 0];
+            q(:, :, 35) = [0 1.04 1.11 0.99 0];
+            q(:, :, 36) = [0 0.96 1.12 1.06 0];
+
+            self.test_qmatrix = q;
         end
     end
 end

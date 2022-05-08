@@ -8,6 +8,23 @@ clc;
 figure;
 set(0,'DefaultFigureWindowStyle','docked');
 
+%% joint angles from video
+
+ws = [-0.5 0.5 -0.5 0.5 0 0.8];
+r = Dobot(ws, 2, 2);
+view([0 -1 0])
+
+n = 36;
+q = zeros(1, 5, n); 
+
+% copied from video (Dobot moving through Cartesian Space)
+r.test_pos(q) % create test_qmatrix
+
+for i=1:n
+    r.model.animate(r.test_qmatrix(:, :, i));
+    pause(0.5);
+end
+
 %% Inputs
 %preset the base position of the ur5 and ur3
 r1base = transl(0.2,0,0.490) * trotz(pi);
