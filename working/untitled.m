@@ -111,34 +111,10 @@ r2.model.animate(q);
 drawnow();
 axis equal
 
-% update variables
-handles.q1 = 0;
-handles.q2 = pi/2;
-handles.q3 = 3*pi/4;
-handles.q4 = constrain_joint4(handles.q2,handles.q3);
-handles.q5 = 0;
-
-qpos = r1.model.getpos;
-
-pos = r1.model.fkine(qpos);
-
-% update xyz variables
-handles.px = pos(1,4);
-handles.py = pos(2,4);
-handles.pz = pos(3,4);
-
-% update the textboxes
-set(handles.text3, 'String',handles.q1);
-set(handles.text4, 'String',handles.q2);
-set(handles.text5, 'String',handles.q3);
-set(handles.text6, 'String',handles.q5);
-
-set(handles.text7, 'String',handles.px);
-set(handles.text8, 'String',handles.py);
-set(handles.text9, 'String',handles.pz);
-
 handles.r1 = r1;
 handles.r2 = r2;
+
+update_strings(hObject,handles);
 guidata(hObject,handles);
 
 
@@ -197,7 +173,7 @@ q = handles.r1.model.getpos;
 q(1,1) = q(1,1)-0.1;
 handles.r1.model.animate(q);
 
-set(handles.text3, 'String',q(1,1));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -211,7 +187,7 @@ q(1,2) = q(1,2)-0.1;
 q(1,4) = constrain_joint4(q(1,2),q(1,3));
 handles.r1.model.animate(q);
 
-set(handles.text4, 'String',q(1,2));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -227,7 +203,7 @@ q(1,3) = q(1,3)-0.1;
 q(1,4) = constrain_joint4(q(1,2),q(1,3));
 handles.r1.model.animate(q);
 
-set(handles.text5, 'String',q(1,3));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -241,7 +217,7 @@ q = handles.r1.model.getpos;
 q(1,5) = q(1,5)-0.1;
 handles.r1.model.animate(q);
 
-set(handles.text6, 'String',q(1,5));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -256,8 +232,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(1,4) = tr(1,4)-0.01;
 
-txt = tr(1,4);
-set(handles.text7, 'String',txt);
+update_strings(hObject,handles);
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -277,8 +252,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(2,4) = tr(2,4)-0.01;
 
-txt = tr(2,4);
-set(handles.text8, 'String',txt);
+update_strings(hObject,handles)
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -297,8 +271,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(3,4) = tr(3,4)-0.01;
 
-txt = tr(3,4);
-set(handles.text9, 'String',txt);
+update_strings(hObject,handles)
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -316,7 +289,7 @@ q = handles.r1.model.getpos;
 q(1,1) = q(1,1)+0.1;
 handles.r1.model.animate(q);
 
-set(handles.text3, 'String',q(1,1));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -331,7 +304,7 @@ q(1,2) = q(1,2)+0.1;
 q(1,4) = constrain_joint4(q(1,2),q(1,3));
 handles.r1.model.animate(q);
 
-set(handles.text4, 'String',q(1,2));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -346,7 +319,7 @@ q(1,3) = q(1,3)+0.1;
 q(1,4) = constrain_joint4(q(1,2),q(1,3));
 handles.r1.model.animate(q);
 
-set(handles.text5, 'String',q(1,3));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -360,7 +333,7 @@ q = handles.r1.model.getpos;
 q(1,5) = q(1,5)+0.1;
 handles.r1.model.animate(q);
 
-set(handles.text6, 'String',q(1,5));
+update_strings(hObject,handles)
 
 guidata(hObject,handles);
 
@@ -377,8 +350,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(1,4) = tr(1,4)+0.01;
 
-txt = tr(1,4);
-set(handles.text7, 'String',txt);
+update_strings(hObject,handles)
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -398,8 +370,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(2,4) = tr(2,4)+0.01;
 
-txt = tr(1,4);
-set(handles.text8, 'String',txt);
+update_strings(hObject,handles)
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -419,8 +390,7 @@ tr = handles.r1.model.fkine(q);
 
 tr(3,4) = tr(3,4)+0.01;
 
-txt = tr(3,4);
-set(handles.text9, 'String',txt);
+update_strings(hObject,handles)
 
 newq = handles.r1.model.ikcon(tr,q);
 handles.r1.model.animate(newq);
@@ -464,7 +434,24 @@ if data == "0"
     set(handles.stoptext, 'BackgroundColor','green');
 end
 
-guidata(hObject,handles)
+guidata(hObject,handles);
+
+function update_strings(hObject,handles)
+% function updates the all the strings on the jogging UI
+q = handles.r1.model.getpos;
+
+set(handles.text3, 'String',q(1,1));
+set(handles.text4, 'String',q(1,2));
+set(handles.text5, 'String',q(1,3));
+set(handles.text6, 'String',q(1,5));
+
+tr = handles.r1.model.fkine(q);
+
+set(handles.text7, 'String',tr(1,4));
+set(handles.text8, 'String',tr(2,4));
+set(handles.text9, 'String',tr(3,4));
+
+guidata(hObject,handles);
 
 
 
