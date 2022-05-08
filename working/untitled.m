@@ -63,6 +63,8 @@ guidata(hObject, handles);
 if strcmp(get(hObject,'Visible'),'off')
     plot(rand(5));
 end
+
+
 % UIWAIT makes untitled wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
@@ -109,18 +111,23 @@ r2.model.animate(q);
 drawnow();
 axis equal
 
+% update variables
 handles.q1 = 0;
 handles.q2 = pi/2;
 handles.q3 = 3*pi/4;
 handles.q4 = constrain_joint4(handles.q2,handles.q3);
 handles.q5 = 0;
+
 qpos = r1.model.getpos;
+
 pos = r1.model.fkine(qpos);
+
+% update xyz variables
 handles.px = pos(1,4);
 handles.py = pos(2,4);
 handles.pz = pos(3,4);
 
-
+% update the textboxes
 set(handles.text3, 'String',handles.q1);
 set(handles.text4, 'String',handles.q2);
 set(handles.text5, 'String',handles.q3);
@@ -154,6 +161,7 @@ handles.state = state;
 if state == 1
     handles.conti = 0;
     set(handles.stoptext, 'Visible','on');
+    set(handles.stoptext, 'BackgroundColor','red');
 end
 if state == 0
     set(handles.stoptext, 'BackgroundColor','green');
@@ -167,7 +175,10 @@ function connect_b_Callback(hObject, eventdata, handles)
 % hObject    handle to connect_b (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+s = serialport('/dev/ttyACM0',9600);
+handles.s = s;
 
+guidata(hObject,handles);
 
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
@@ -486,10 +497,13 @@ function updatebotq(hObject,handles)
 q = [handles.q1,handles.q2,handles.q3,handles.q4,handles.q5];
 handles.r1.model.animate(q);
 
-pos = handles.r1.model.getpos;
-handles.px = pos(1,1);
-handles.py = pos(1,2);
-handles.pz = pos(1,3);
+qpos = handles.r1.model.getpos
+pos = handles.r1.model.fkine(qpos)
+
+% update xyz variables
+handles.px = pos(1,4);
+handles.py = pos(2,4);
+handles.pz = pos(3,4);
 
 set(handles.text7, 'String',handles.px);
 set(handles.text8, 'String',handles.py);
@@ -503,7 +517,7 @@ qnew = handles.r1.model.ikcon(transl(handles.px,handles.py,handles.pz));
 handles.q1 = qnew(1,1);
 handles.q2 = qnew(1,2);
 handles.q3 = qnew(1,3);
-handles.q4 = qnew(1,4);
+handles.q4 = constrain_joint4(qnew(1,2),qnew(1,3));
 handles.q5 = qnew(1,5);
 
 q = [handles.q1,handles.q2,handles.q3,handles.q4,handles.q5];
@@ -515,3 +529,22 @@ set(handles.text5, 'String',handles.q3);
 set(handles.text6, 'String',handles.q5);
 
 guidata(hObject,handles);
+
+function checkhardwarestop(hObject,handles)
+% polls serial port to see the state of the estop
+flush(s);
+data = read(s,1,"char");
+% arduino code send 1 if estop is on and 0 if estop is turned off
+% update the variables
+if data == "1"
+    handles.cont = 0;
+    handles.state = 1;
+    set(handles.stoptext, 'Visible','on');
+    set(handles.stoptext, 'BackgroundColor','red');
+end
+if data == "0"
+    handles.state = 0;
+    set(handles.stoptext, 'BackgroundColor','green');
+end
+
+guidata(hObject,handles)
