@@ -22,7 +22,7 @@ function varargout = untitled(varargin)
 
 % Edit the above text to modify the response to help untitled
 
-% Last Modified by GUIDE v2.5 03-May-2022 08:46:20
+% Last Modified by GUIDE v2.5 08-May-2022 18:15:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,6 +63,8 @@ guidata(hObject, handles);
 if strcmp(get(hObject,'Visible'),'off')
     plot(rand(5));
 end
+
+
 % UIWAIT makes untitled wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
@@ -78,9 +80,9 @@ function varargout = untitled_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
+% --- Executes on button press in map.
+function map_Callback(hObject, eventdata, handles)
+% hObject    handle to map (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -92,54 +94,384 @@ data.map = map;
 guidata(hObject,data);
 
 
-% --- Executes on button press in pushbutton2.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
+% --- Executes on button press in stuff.
+function stuff_Callback(hObject, eventdata, handles)
+% hObject    handle to stuff (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 hold on;
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-q = [0,0,0,0];
-r1 = Dobot(ws,1);
+q = [0,pi/2,3*pi/4,constrain_joint4(pi/2,3*pi/4),0];
+r1 = Dobot(ws,1,2);
 r1.model.base = transl(0.2,0,0.490)*trotz(pi);
-r2 = Dobot(ws,2);
+r2 = Dobot(ws,2,2);
 r2.model.base = transl(-0.2,0,0.490)*trotz(-pi/2);
-r1.model.plot(q);
-r2.model.plot(q);
+r1.model.animate(q);
+r2.model.animate(q);
 drawnow();
 axis equal
 
-data = guidata(hObject);
-data.r1 = r1;
-data.r2 = r2;
-guidata(hObject,data);
+handles.r1 = r1;
+handles.r2 = r2;
+
+update_strings(hObject,handles);
+guidata(hObject,handles);
 
 
-% --- Executes on button press in pushbutton6.
-function pushbutton6_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton6 (see GCBO)
+% --- Executes on button press in simstarter.
+function simstarter_Callback(hObject, eventdata, handles)
+% hObject    handle to simstarter (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in togglebutton1.
-function togglebutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to togglebutton1 (see GCBO)
+% --- Executes on button press in estop.
+function estop_Callback(hObject, eventdata, handles)
+% hObject    handle to estop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of togglebutton1
+% Hint: get(hObject,'Value') returns toggle state of estop
+state = get(hObject,'Value');
+handles.state = state;
+if state == 1
+    handles.conti = 0;
+    set(handles.stoptext, 'Visible','on');
+    set(handles.stoptext, 'BackgroundColor','red');
+end
+if state == 0
+    set(handles.stoptext, 'BackgroundColor','green');
+end
+
+guidata(hObject, handles);
 
 
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton3 (see GCBO)
+% --- Executes on button press in connect_b.
+function connect_b_Callback(hObject, eventdata, handles)
+% hObject    handle to connect_b (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+path = get(hObject,'String');
+s = serialport(path,9600);
+handles.s = s;
 
+guidata(hObject,handles);
 
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in q1minus.
+function q1minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q1minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,1) = q(1,1)-0.1;
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+% --- Executes on button press in q2minus.
+function q2minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q2minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,2) = q(1,2)-0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+
+% --- Executes on button press in q3minus.
+function q3minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q3minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,3) = q(1,3)-0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in q4minus.
+function q4minus_Callback(hObject, eventdata, handles)
+% hObject    handle to q4minus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,5) = q(1,5)-0.1;
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in xminus.
+function xminus_Callback(hObject, eventdata, handles)
+% hObject    handle to xminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(1,4) = tr(1,4)-0.01;
+
+update_strings(hObject,handles);
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in yminus.
+function yminus_Callback(hObject, eventdata, handles)
+% hObject    handle to yminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(2,4) = tr(2,4)-0.01;
+
+update_strings(hObject,handles)
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+% --- Executes on button press in zminus.
+function zminus_Callback(hObject, eventdata, handles)
+% hObject    handle to zminus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(3,4) = tr(3,4)-0.01;
+
+update_strings(hObject,handles)
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+% --- Executes on button press in q1plus.
+function q1plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q1plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,1) = q(1,1)+0.1;
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in q2plus.
+function q2plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q2plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,2) = q(1,2)+0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in q3plus.
+function q3plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q3plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,3) = q(1,3)+0.1;
+q(1,4) = constrain_joint4(q(1,2),q(1,3));
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in q4plus.
+function q4plus_Callback(hObject, eventdata, handles)
+% hObject    handle to q4plus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+q(1,5) = q(1,5)+0.1;
+handles.r1.model.animate(q);
+
+update_strings(hObject,handles)
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in xplus.
+function xplus_Callback(hObject, eventdata, handles)
+% hObject    handle to xplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(1,4) = tr(1,4)+0.01;
+
+update_strings(hObject,handles)
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in yplus.
+function yplus_Callback(hObject, eventdata, handles)
+% hObject    handle to yplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(2,4) = tr(2,4)+0.01;
+
+update_strings(hObject,handles)
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in zplus.
+function zplus_Callback(hObject, eventdata, handles)
+% hObject    handle to zplus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+q = handles.r1.model.getpos;
+tr = handles.r1.model.fkine(q);
+
+tr(3,4) = tr(3,4)+0.01;
+
+update_strings(hObject,handles)
+
+newq = handles.r1.model.ikcon(tr,q);
+handles.r1.model.animate(newq);
+
+% updatebotp(hObject,handles);
+
+guidata(hObject,handles);
+
+
+% --- Executes on button press in cont.
+function cont_Callback(hObject, eventdata, handles)
+% hObject    handle to cont (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+state = handles.state;
+contstate = handles.conti;
+
+if contstate == 0
+    if state == 0
+        handles.conti = 1;
+        set(handles.stoptext, 'Visible','off');
+    end
+end
+guidata(hObject,handles);
+
+
+function checkhardwarestop(hObject,handles)
+% polls serial port to see the state of the estop
+flush(s);
+data = read(s,1,"char");
+% arduino code send 1 if estop is on and 0 if estop is turned off
+% update the variables
+if data == "1"
+    handles.cont = 0;
+    handles.state = 1;
+    set(handles.stoptext, 'Visible','on');
+    set(handles.stoptext, 'BackgroundColor','red');
+end
+if data == "0"
+    handles.state = 0;
+    set(handles.stoptext, 'BackgroundColor','green');
+end
+
+guidata(hObject,handles);
+
+function update_strings(hObject,handles)
+% function updates the all the strings on the jogging UI
+q = handles.r1.model.getpos;
+
+set(handles.text3, 'String',q(1,1));
+set(handles.text4, 'String',q(1,2));
+set(handles.text5, 'String',q(1,3));
+set(handles.text6, 'String',q(1,5));
+
+tr = handles.r1.model.fkine(q);
+
+set(handles.text7, 'String',tr(1,4));
+set(handles.text8, 'String',tr(2,4));
+set(handles.text9, 'String',tr(3,4));
+
+guidata(hObject,handles);
+
+
+
+function path_Callback(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of path as text
+%        str2double(get(hObject,'String')) returns contents of path as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function path_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
