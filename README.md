@@ -5,7 +5,7 @@ Robotics and SnC assignment
 
 IR:
 
-Goal:   To simulate the operation of 2 Dobots to assemble and solder microelectronics to pcb board.
+Goal:   To simulate the operation of 2 Dobots to draw traces on a PCB.
 
 
 

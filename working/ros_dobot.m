@@ -18,7 +18,7 @@ currentSafetyStatus = safetyStatusSubscriber.LatestMessage.Data
 %     PAUSED - 5
 %     STOPPED - 6
 
-% If the safety code is 4 reinitialize robot
+% If the safety code is not 4 reinitialize robot
 
 %% Initialize or reinitialize robot
 [safetyStatePublisher,safetyStateMsg] = rospublisher('/dobot_magician/target_safety_status');

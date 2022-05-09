@@ -1,4 +1,4 @@
-function [shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n)
+function [shape_array, annot_color_img] = calc_camera_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n)
     shape_array = zeros(n, 3);
 
     % Intrinsic camera matrix for the raw (distorted) images.
@@ -24,7 +24,7 @@ function [shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, alig
     
         d = aligned_img(v, u); % get depth at img centroid
     
-        X = ((u - cx) * d) / fx;
+        X = ((u - cx) * d) / fx; % image point u - principal point cx * depth / focal length
         Y = ((v - cy) * d) / fy;
         Z = d;
     

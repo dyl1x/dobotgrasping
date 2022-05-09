@@ -19,6 +19,9 @@ classdef Objects < handle
         midpoint;
         verts;
 
+        colour;
+        shape;
+
         point;
         mesh;
         position;

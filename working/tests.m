@@ -35,7 +35,7 @@ set(mesh_h,'Vertices',transformedVertices(:,1:3));
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 qHome = [0,pi/2,-pi/2,0];
 
-rt1 = Dobot(ws,3);
+rt1 = Dobot(ws,1, 2);
 
 %%
 q2 = deg2rad(20);
