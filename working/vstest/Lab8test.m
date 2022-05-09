@@ -31,7 +31,7 @@ cam = CentralCamera('focal', 0.08, 'pixel', 10e-5, ...
 'resolution', [1024 1024], 'centre', [512 512],'name', 'UR10camera');
 
 % frame rate
-fps = 25;
+fps = 50;
 
 %Define values
 %gain of the controler
@@ -72,6 +72,19 @@ cam.plot(P);    % show initial view
 %%
 vsloop(cam,depth,lambda,fps,pStar,P,r,q0);
 
+%%
+pcent = [1.8,0,1];
+%Create 3D points
+P=[pcent(1,1),pcent(1,1),pcent(1,1),pcent(1,1);
+   pcent(1,2)-0.25,pcent(1,2)+0.25,pcent(1,2)+0.25,pcent(1,2)-0.25;
+   pcent(1,3)+0.25,pcent(1,3)+0.25,pcent(1,3)-0.25,pcent(1,3)-0.25;];
+
+plot_sphere(P, 0.05, 'b')
+
+
+q0 = r.model.getpos;
+%%
+vsloop(cam,depth,lambda,fps,pStar,P,r,q0');
 %%
 %Initialise display arrays
 vel_p = [];

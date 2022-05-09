@@ -11,7 +11,7 @@
 % pStar - target points
 % P - 3D world coordinated of the points being tracked 
 % r - robot object
-% q0 - starting pos of robot
+% q0 - transpose of starting pos of robot
 function vsloop(cam,depth,lambda,fps,pStar,P,r,q0)
 ksteps = 0;
 while true
