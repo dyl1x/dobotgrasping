@@ -1,14 +1,15 @@
 
-function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
+function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
     if ~exist('n', 'var'), n = 5; end
+    if ~exist('weight', 'var'), weight = 1; end
     
     % 1.1) Set parameters for the simulation
-    t = 5;                           % Total time (s)
-    deltaT = 0.05;                   % Control frequency
+    t = 2;                           % Total time (s)
+    deltaT = 0.02;                   % Control frequency
     steps = t/deltaT;                % No. of steps for simulation
     delta = 2*pi/steps;              % Small angle change
-    epsilon = 0.1;                   % Threshold value for manipulability/Damped Least Squares
-    W = diag([1 1 1 0.1 0.1 0.1]);   % Weighting matrix for the velocity vector
+    epsilon = 0.000001;                   % Threshold value for manipulability/Damped Least Squares
+    W = diag([1 1 1 0.01 0.01 0.01]);   % Weighting matrix for the velocity vector
     
     % 1.2) Allocate array data
     m = zeros(steps, 1);             % Array for Measure of Manipulability
@@ -21,16 +22,34 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
     
     % 1.3) Set up trajectory, initial pose
     s = lspb(0,1,steps);             % Trapezoidal trajectory scalar
-    if path == true
+    if path == 2
         for i = 1:steps
-            x(1,i) = (1-s(i)) * 0.35 + s(i) * 0.35;     % Points in x
-            x(2,i) = (1-s(i)) * -0.55 + s(i) * 0.55;    % Points in y
-            x(3,i) = 0.5 + 0.2*sin(i*delta);            % Points in z
+            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1) + weight*sin((i/2)*delta);     % Points in x
+            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2);    % Points in y
+            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);            % Points in z
             theta(1,i) = 0;                             % Roll angle 
-            theta(2,i) = 5*pi/9;                        % Pitch angle
+            theta(2,i) = 0;                        % Pitch angle
             theta(3,i) = 0;                             % Yaw angle
         end
-    else    
+    elseif path == 3 % y sin change
+        for i = 1:steps
+            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1);     % Points in x
+            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2) + weight*sin((i/2)*delta);    % Points in y
+            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);      % Points in z
+            theta(1,i) = 0;                             % Roll angle 
+            theta(2,i) = 0;                        % Pitch angle
+            theta(3,i) = 0;                             % Yaw angle
+        end 
+    elseif path == 4 % x and y sin change
+        for i = 1:steps
+            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1) + weight*sin((i/2)*delta);     % Points in x
+            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2) - weight*sin((i/2)*delta);    % Points in y
+            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);      % Points in z
+            theta(1,i) = 0;                             % Roll angle 
+            theta(2,i) = 0;                        % Pitch angle
+            theta(3,i) = 0;                             % Yaw angle
+        end 
+    elseif path == 1 % straight line
         for i = 1:steps
             x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1);       % Points in x
             x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2);       % Points in y
@@ -42,7 +61,8 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
     end
     
     T = [rpy2r(theta(1,1), theta(2,1), theta(3,1)) x(:,1); zeros(1,3) 1];  % Create transformation of first point and angle
-    qMatrix(1,:) = model.ikcon(T, q0);                                     % Solve joint angles to achieve first waypoint
+    qMatrix(1,:) = model.ikcon(T, q0 );                                    % Solve joint angles to achieve first waypoint
+%     qMatrix(1,:) = model.ikine(T, q0, [1 1 1 0 0 0]);                                     % Solve joint angles to achieve first waypoint
     
     % 1.4) Track the trajectory with RMRC
     for i = 1:steps-1
@@ -86,14 +106,17 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
         qMatrix(i+1,:) = qMatrix(i,:) + deltaT * qdot(i,:);                % Update next joint state based on joint velocities
         positionError(:,i) = x(:,i+1) - T(1:3,4);                          % For plotting
         angleError(:,i) = deltaTheta;                                      % For plotting
+%         model.animate(qMatrix(i, :));
+%         model.teach;
+%         pause(0.5);
     end
     
     if plot == true
         
         % 1.5) Plot the results
-        figure(1)        
+        figure(2)        
         for i = 1:6
-            figure(2)
+            figure(3)
             subplot(3,2,i)
             plot(qMatrix(:,i),'k','LineWidth',1)
             title(['Joint ', num2str(i)])
@@ -101,7 +124,7 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
             refline(0, model.qlim(i,1));
             refline(0, model.qlim(i,2));
             
-            figure(3)
+            figure(4)
             subplot(3,2,i)
             plot(qdot(:,i),'k','LineWidth',1)
             title(['Joint ',num2str(i)]);
@@ -109,7 +132,7 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, n)
             refline(0,0)
         end
         
-        figure(4)
+        figure(5)
         subplot(2,1,1)
         plot(positionError'*1000,'LineWidth',1)
         refline(0,0)

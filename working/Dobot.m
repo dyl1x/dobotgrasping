@@ -90,7 +90,7 @@ classdef Dobot < handle
             end
         end
 
-        function calc_volume(self, degrees)
+        function calc_volume(self, degrees, silent)
             steps = deg2rad(degrees);
             qlim = self.model.qlim;
 
@@ -104,22 +104,26 @@ classdef Dobot < handle
                 for q2 = qlim(2, 1):steps:qlim(2, 2)
                     for q3 = qlim(3, 1):steps:qlim(3, 2)
                         for q4 = qlim(4, 1):steps:qlim(4, 2)
-                            q = [q1, q2, q3, q4];
+                            for q5 = qlim(5, 1):steps:qlim(5, 2)
+                                q = [q1, q2, q3, constrain_joint4(q2, q3), q5];
     
-                            tr = self.model.fkine(q);
-                            point_cloud(cnt, :) = tr(1:3, 4)'; % ' is to get the transpose
+                                tr = self.model.fkine(q);
+                                point_cloud(cnt, :) = tr(1:3, 4)'; % ' is to get the transpose
     
-                            cnt = cnt + 1;
-                            if mod(cnt/size*100, 1) == 0
-                                disp(['After ', num2str(toc), ' seconds, completed ', num2str((cnt/size) * 100), '% of poses of Dobot'])
-                                self.volume = point_cloud;
+                                cnt = cnt + 1;
+                                if mod(cnt/size*100, 1) == 0
+                                    disp(['After ', num2str(toc), ' seconds, completed ', num2str((cnt/size) * 100), '% of poses of Dobot'])
+                                    self.volume = point_cloud;
+                                end
                             end
                         end
                     end
                 end
             end
-            figure;
-            plot3(point_cloud(:, 1), point_cloud(:, 2), point_cloud(:, 3), 'r.');
+            if silent
+                hold on
+                plot3(point_cloud(:, 1), point_cloud(:, 2), point_cloud(:, 3), 'r-');
+            end
 
         end
 
