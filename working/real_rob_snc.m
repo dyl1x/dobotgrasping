@@ -93,7 +93,8 @@ targetJointTrajMsg.Points = trajectoryPoint;
 send(targetJointTrajPub,targetJointTrajMsg);
 
 %% pick point
-endEffectorPosition = pickPoints(3,:); % home
+%endEffectorPosition = pickPoints(3,:); % home
+endEffectorPosition = [0.2,0,0];
 endEffectorRotation = [0,0,0]; % home
 
 [targetEndEffectorPub,targetEndEffectorMsg] = rospublisher('/dobot_magician/target_end_effector_pose');
@@ -221,17 +222,17 @@ for i=1:size(start)
     % move from home to start shape
     start_pt = start(i, :);
 
-    target_msg.Position.X = start_pt(1);
-    target_msg.Position.Y = start_pt(2);
-    target_msg.Position.Z = start_pt(3) + 0.05;
+    target_ee_msg.Position.X = start_pt(1);
+    target_ee_msg.Position.Y = start_pt(2);
+    target_ee_msg.Position.Z = start_pt(3) + 0.05;
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_pub, target_ee_msg);
     keyboard
 end
 
@@ -242,17 +243,17 @@ for i=1:size(start)
     % move from home to start shape
     start_pt = start(i, :);
 
-    target_msg.Position.X = start_pt(1);
-    target_msg.Position.Y = start_pt(2);
-    target_msg.Position.Z = start_pt(3);
+    target_ee_msg.Position.X = start_pt(1);
+    target_ee_msg.Position.Y = start_pt(2);
+    target_ee_msg.Position.Z = start_pt(3);
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_pub, target_ee_msg);
     keyboard
 
     % activate tooltip
@@ -264,17 +265,17 @@ for i=1:size(start)
     % move from home to start shape
     dest_pt = dest(i, :);
 
-    target_msg.Position.X = dest_pt(1);
-    target_msg.Position.Y = dest_pt(2);
-    target_msg.Position.Z = dest_pt(3);
+    target_ee_msg.Position.X = dest_pt(1);
+    target_ee_msg.Position.Y = dest_pt(2);
+    target_ee_msg.Position.Z = dest_pt(3);
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_pub, target_ee_msg);
     keyboard
 
     % deactivate tooltip
@@ -294,18 +295,18 @@ for i=1:size(start)
     % move from home to dest shape
     dest_pt = dest(i, :);
 
-    target_msg.Position.X = dest_pt(1);
-    target_msg.Position.Y = dest_pt(2);
-    target_msg.Position.Z = dest_pt(3);
+    target_ee_msg.Position.X = dest_pt(1);
+    target_ee_msg.Position.Y = dest_pt(2);
+    target_ee_msg.Position.Z = dest_pt(3);
 
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_pub, target_ee_msg);
     keyboard
 
     % activate tooltip
@@ -316,17 +317,17 @@ for i=1:size(start)
     % move from home to start shape
     start_pt = start(i, :);
 
-    target_msg.Position.X = start_pt(1);
-    target_msg.Position.Y = start_pt(2);
-    target_msg.Position.Z = start_pt(3);
+    target_ee_msg.Position.X = start_pt(1);
+    target_ee_msg.Position.Y = start_pt(2);
+    target_ee_msg.Position.Z = start_pt(3);
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_pub, target_ee_msg);
     keyboard
 
     % deactivate tooltip
@@ -340,14 +341,14 @@ end
 
 %% 2. Connect to Camera to feed points for Real Dobot
 
-load('scene_detector.mat');
-load('shape_detector.mat');
-
+load('../scene_detector.mat');
+load('../shape_detector.mat');
+%%
 color_limit = 1.2; % 1.1 - 1.5
-n = 6; % num features in img
+n = 2; % num features in img
 
 % camera translation
-camera_offset =  [0.7, 0, 0.06];
+camera_offset =  [0.7123, -0.0686, 0.07];
 cam_rot = deg2rad(0); % x rot if cam facing down toward surface
 
 % Show RGB Image
@@ -393,7 +394,7 @@ ws = [-0.1 0.9 -0.4 0.4 0 0.4];
 dobot = Dobot(ws, '1', 2);
 hold on
 
-cam = Objects('res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
+cam = Objects('../res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
 cam.rot([0, 0, pi/2])
 cam.rot([cam_rot 0 0]) % 10 deg tilt down
 
@@ -414,10 +415,10 @@ axis equal
 camlight
 
 ncol = ones(1, 3);
-dest = zeros(1, n);
+dest = zeros(4, 4, n);
 for i=1:n
     [dest_, ncol] = colour_shape_dest(objects, i, ncol, true);
-    dest(i) = dest_;
+    dest(:, :, i) = dest_;
 end
 
 q0 = zeros(1, 4); % Dobot has 4 joints
@@ -455,75 +456,91 @@ disp('proceeding ...');
 traj_point = rosmessage("trajectory_msgs/JointTrajectoryPoint");
 traj_point.Positions = q0;
 target_joint_msg.Points = traj_point;
-send(target_pub, target_joint_msg);
-keyboard % manual continue awaiting completion of joint movement
+send(target_joint_pub, target_joint_msg);
+pause(1); %keyboard % manual continue awaiting completion of joint movement
 
 
 % 3. Get current pose
 [ee_msg, eul] = get_current_pose(ee_sub);
-keyboard % display msg
+% keyboard % display msg
 
 
 % 4. Hover above shapes to prealign
-for i=1:size(world_coords)
+wc = size(world_coords);
+for i=1:wc(3)
 
     % move from home to start shape
-    start_pt = world_coords(i, :);
+    start_pt = world_coords(:, :, i);
 
-    target_msg.Position.X = start_pt(1);
-    target_msg.Position.Y = start_pt(2);
-    target_msg.Position.Z = start_pt(3) + 0.05;
+    target_ee_msg.Position.X = start_pt(1);
+    target_ee_msg.Position.Y = start_pt(2);
+    target_ee_msg.Position.Z = start_pt(3) + 0.05;
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
-    keyboard
+    send(target_ee_pub, target_ee_msg);
+    pause(0.3);
+%     keyboard
 end
 
 
 % 5. Loop through start to finish
-for i=1:size(world_coords)
+for i=1:wc(3)
 
     % move from home to start shape
-    start_pt = world_coords(i, :);
+    start_pt = world_coords(:, :, i);
 
-    target_msg.Position.X = start_pt(1);
-    target_msg.Position.Y = start_pt(2);
-    target_msg.Position.Z = start_pt(3);
+    target_ee_msg.Position.X = start_pt(1);
+    target_ee_msg.Position.Y = start_pt(2);
+    target_ee_msg.Position.Z = start_pt(3);
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_ee_pub, target_ee_msg);
     keyboard
 
     % activate tooltip
     tool_msg.Data = 1; 
     send(tool_pub, tool_msg);
     pause(0.2);
+    
+    % phome
+    target_ee_msg.Position.X = 0.17;
+    target_ee_msg.Position.Y = 0;
+    target_ee_msg.Position.Z = 0;
+    
+    qua = eul2quat(zeros(1, 3));
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
+    
+    send(target_ee_pub, target_ee_msg);
+    pause(0.3);
 
     % move to dest
     % move from home to start shape
-    dest_pt = dest(i, :);
+    dest_pt = dest(:, :, i);
 
-    target_msg.Position.X = dest_pt(1);
-    target_msg.Position.Y = dest_pt(2);
-    target_msg.Position.Z = dest_pt(3);
+    target_ee_msg.Position.X = dest_pt(1, 4);
+    target_ee_msg.Position.Y = dest_pt(2, 4);
+    target_ee_msg.Position.Z = dest_pt(3, 4);
 
     qua = eul2quat(zeros(1, 3));
-    target_msg.Orientation.W = qua(1);
-    target_msg.Orientation.X = qua(2);
-    target_msg.Orientation.Y = qua(3);
-    target_msg.Orientation.Z = qua(4);
+    target_ee_msg.Orientation.W = qua(1);
+    target_ee_msg.Orientation.X = qua(2);
+    target_ee_msg.Orientation.Y = qua(3);
+    target_ee_msg.Orientation.Z = qua(4);
 
-    send(target_pub, target_msg);
+    send(target_ee_pub, target_ee_msg);
     keyboard
 
     % deactivate tooltip
@@ -546,7 +563,7 @@ function [ee_msg, eul] = get_current_pose(ee_sub)
                ee_msg.Pose.Orientation.X, ...
                ee_msg.Pose.Orientation.Y, ...
                ee_msg.Pose.Orientation.Z];
-    eul = quat2eul(ee_quat');
+    eul = quat2eul(ee_quat);
     pause(0.2);
 end
 

@@ -1,4 +1,4 @@
-function [shape_array, annot_color_img] = calc_world_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n)
+function [shape_array, annot_color_img] = calc_camera_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n)
     shape_array = zeros(n, 3);
 
     % Intrinsic camera matrix for the raw (distorted) images.

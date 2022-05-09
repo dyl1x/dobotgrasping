@@ -17,7 +17,7 @@ for i=1:n
     disp([char(shape_labels(i)), ': ', num2str([ptWorld(1:3, 4)]')])
     line2_h = plot3([b2c(1, 4), ptWorld(1, 4)], [b2c(2, 4), ptWorld(2, 4)], [b2c(3, 4), ptWorld(3, 4)], 'm');
 
-    objects{i} = Objects(strcat('res/shapes/', shape_labels(i), '.ply'), [ptWorld(1:3, 4)]', [0 0 0]);
+    objects{i} = Objects(strcat('../res/shapes/', shape_labels(i), '.ply'), [ptWorld(1:3, 4)]', [0 0 0]);
     split_string = shape_labels(i).split(' ');
 
     objects{i}.shape = split_string(1);

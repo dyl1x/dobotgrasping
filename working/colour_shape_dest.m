@@ -1,5 +1,8 @@
 function [dest, ncol] = colour_shape_dest(objects, i, ncol, real)
 
+% dropPoints = [-0.0564,-0.226,-0.039;
+%                0.0151,-0.226,-0.039;
+%                0.07445,-0.226,-0.039];
     if real
         if strcmp(objects{i}.shape, 'cube')
             z_coord = -0.039;
