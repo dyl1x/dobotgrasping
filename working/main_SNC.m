@@ -1,6 +1,9 @@
 %% SNC Group Assignment
 % Dobot control and grasping
 
+% Add toolboxes to readme, other load up conditions GoogLeNet
+
+
 close all
 clearvars
 clc
@@ -34,15 +37,22 @@ imshow(i)
 load('scene_detector.mat')
 load('shape_detector.mat')
 
+%% 2.1 Calc camera coordinates from known calibration image
+
+
+filename = 'local3'; % n = 3
+bag = rosbag(strcat(['bag/', filename, '.bag']));
+
+
 %% 2. 
-close all
-clc
+% close all
+% clc
 
 color_limit = 1.3;
 steps = 50; % trajectories
 n = 3; % num features in img
 
-filename = 'RealRobotTest1'; % n = 3
+filename = 'local3'; % n = 3
 % filename = 'RealRobotTest2'; % n = 5
 % filename = 'AllShapesTest'; % n = 12
 % filename = '3ObjAlignDepth'; % n = 3
@@ -228,7 +238,7 @@ ws = [-0.1 0.9 -0.4 0.4 0 0.4];
 dobot = Dobot(ws, '1', 2);
 hold on
 
-cam = Objects('res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
+cam = Objects('../res/obj/intel_d435.ply', camera_offset, [0, 0, 0]);
 cam.rot([0, 0, pi/2])
 cam.rot([cam_rot 0 0]) % 10 deg tilt down
 
