@@ -85,9 +85,4 @@ plot_sphere(P, 0.05, 'b')
 q0 = r.model.getpos;
 %%
 vsloop(cam,depth,lambda,fps,pStar,P,r,q0');
-%%
-%Initialise display arrays
-vel_p = [];
-uv_p = [];
-history = [];
  
