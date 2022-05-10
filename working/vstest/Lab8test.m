@@ -15,10 +15,12 @@ pStar = [662 362 362 662; 362 362 662 662];
 
 pcent = [2,0,1];
 %Create 3D points
-P=[pcent(1,1),pcent(1,1),pcent(1,1),pcent(1,1);
+P2=[pcent(1,1),pcent(1,1),pcent(1,1),pcent(1,1);
    pcent(1,2)-0.25,pcent(1,2)+0.25,pcent(1,2)+0.25,pcent(1,2)-0.25;
    pcent(1,3)+0.25,pcent(1,3)+0.25,pcent(1,3)-0.25,pcent(1,3)-0.25;];
 
+cent = transl(1.5,0,1) * troty(pi/2);
+P = getP(cent,0.25);
 
 % Make a UR10
 r = UR10();             
@@ -51,7 +53,7 @@ cam.T = Tc0;
 
 % Display points in 3D and the camera
 cam.plot_camera('Tcam',Tc0, 'label','scale',0.15);
-plot_sphere(P, 0.05, 'b')
+plot_sphere(P, 0.025, 'b')
 lighting gouraud
 light
 
@@ -70,7 +72,8 @@ cam.hold(true);
 cam.plot(P);    % show initial view
 
 %%
-vsloop(cam,depth,lambda,fps,pStar,P,r,q0);
+q0 = r.model.getpos;
+vsloop(cam,depth,lambda,fps,pStar,P,r,q0');
 
 %%
 pcent = [1.8,0,1];

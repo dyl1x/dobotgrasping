@@ -19,8 +19,7 @@ prg_br = cent_tr * trbotr;
 
 %
 
-P = [prg_tl(1:3,4),prg_tr(1:3,4),prg_bl(1:3,4),prg_br(1:3,4)];
-
+P = [prg_bl(1:3,4),prg_tl(1:3,4),prg_tr(1:3,4),prg_br(1:3,4)];
 % if you want a plot
 % figure
 % plot_sphere(P, 0.05, 'b')
