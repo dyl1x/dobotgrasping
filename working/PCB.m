@@ -15,11 +15,14 @@ classdef PCB <handle
         vertices;
         vSize;
         type = 2;
+        point;
+        position;
     end
     methods
         function self = PCB(type,pose)
             self.type = type;
             self.pose = pose;
+            
             
             self.LoadModel();            
             self.MoveMesh(pose);
@@ -46,10 +49,10 @@ classdef PCB <handle
                 ,'FaceVertexCData',vertexColours,'EdgeColor','interp','EdgeLighting','flat');
         end
         
-        function MoveMesh(self,brickTransf)
+        function MoveMesh(self, hmg_tf)
             
             % Move the pose
-            self.pose = brickTransf; 
+            self.pose = hmg_tf; 
             % we did a cheeky replace here cos, * by trotx wont rotate it about its local x axis
             % it made things very hard for no reason, i have no fix for
             % this.
@@ -58,6 +61,14 @@ classdef PCB <handle
             % Now update the Vertices
             self.mesh_h.Vertices = updatedPoints(:,1:3);
             drawnow();
+        end
+
+        function tran(self, pos)
+            self.position = makehgtform('translate', [pos(1, 1), pos(1, 2), pos(1, 3)]);
+            self.pose = self.position;
+            self.point = [self.pose(1, 4), self.pose(2, 4), self.pose(3, 4)];
+            updated_points = [self.pose * [self.vertices, ones(self.vSize, 1)]']';
+            self.mesh_h.Vertices = updated_points(:, 1:3);
         end
     end
 end

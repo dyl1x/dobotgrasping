@@ -80,7 +80,7 @@ classdef Environments < handle
 
             % 2nd dobot table
             mesh_h = PlaceObject('models/table.PLY');
-            tf = transl(0.1, -0.45, 0.01)';
+            tf = transl(0.1, -0.42, 0.01)';
             vertices = get(mesh_h,'Vertices');
             transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
             set(mesh_h,'Vertices',transformedVertices(:,1:3));       
@@ -102,9 +102,9 @@ classdef Environments < handle
             mesh_h = PlaceObject('models/estop.ply');
             
             vertices = get(mesh_h,'Vertices');
-            transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
-            set(mesh_h,'Vertices',transformedVertices(:,1:3));
-            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.99)';
+%             transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
+%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0.05, 0.2, 0.5)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
         end

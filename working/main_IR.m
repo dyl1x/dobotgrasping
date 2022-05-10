@@ -36,11 +36,13 @@ clearvars
 close all
 clc
 
-h = 0.5;
+h = 0.51;
 pt = 0.03;
 
-ws_origin = transl(-0.1, -0.42, h);
-conv_out = transl(-0.4, -0.4, h);
+ws_origin = transl(-0.03, -0.42, h) * trotz(pi/2);
+
+stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
+conv_out = transl(-0.3, -0.4, h);
 
 
 mapSize = 0.1;
@@ -49,44 +51,69 @@ hold on
 
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 [q2_, q3_] = deal(deg2rad(45), deg2rad(115));
-q0 = [-3*pi/8 q2_ q3_ constrain_joint4(q2_, q3_) 0];
+q0 = [-pi/2 q2_ q3_ constrain_joint4(q2_, q3_) 0];
 
 r1 = Dobot(ws, 1, 2);
 r1.model.base = transl(-0.1, -0.15, 0.49) * trotz(pi);
 r1.model.animate(q0);
 
 r2 = Dobot(ws, 2, 2);
-r2.model.base = transl(0.2, -0.45, 0.49) * trotz(-3*pi/4);
+r2.model.base = transl(0.2, -0.45, 0.49) * trotz(pi);
 r2.model.animate(q0);
 hold on
 
 drawnow();
 axis equal
 
-pcb1 = PCB(1, transl(-0.375, -0.1, 0.5));
-pcb2 = PCB(2, transl(-0.375, 0.3, 0.5));
-pcb3 = PCB(3, transl(-0.375, 0.5, 0.5));
+pcb1 = PCB(1, transl(-0.33, 0, 0.5) * trotz(pi/2));
+pcb2 = PCB(2, transl(-0.31, 0.3, 0.5));
+pcb3 = PCB(3, transl(-0.33, 0.6, 0.5));
+pcbs = [pcb1, pcb2, pcb3];
 
-% set quide positions
-qPickup = [-1.5551, 0.0017, -0.1257, 0];
-qmid = [0, 0.4171, -0.4869, 0];
-qdrop = [1.5708, 0.0017, -0.1257, 0];
-
-
-% pick and place pcb 1
 view([0 0 1]);
 
-% 1. Move from zero pos to pcb 1
-animate_traj(q0, pcb1.pose, r1.model, false, 1, 0, false, false);
+% animate traj arguments
+% init joint, pcb, robot, false/obj, path 1-5, weight, plot, attach obj
 
-% 2. Move to origin of workspace
-animate_traj(r2.model.getpos, ws_origin, r1.model, pcb1, 5, -0.1, false, true)
+for i=1:length(pcbs)
 
-% % 3. Move to joint pickup pos
-% animate_traj(q0, ws_origin, r2.model, false, 5, -0.1, true, false)
-% 
-% % 4. Move to zero pos
-% animate_traj(r1.model.getpos, r1.model.fkine(q0), r1.model, pcb1, 5, -0.1, true, true)
+    disp(strcat(['PCB: ', num2str(i)]));
+
+    disp('a. Move R1 from q0 to pcb1')
+    animate_traj(q0, pcbs(i).pose, r1.model, false, 1, 0, false, false);
+    
+    disp('b. Move R1 to ws origin')
+    animate_traj(r1.model.getpos, ws_origin, r1.model, pcbs(i), 5, -0.1, false, true)
+    
+    disp('c. Move R1 to stow away pose for laser operation')
+    animate_traj(r1.model.getpos, stow_away, r1.model, false, 1, false, false, false)
+    
+    disp('d. Move R2 to ws origin')
+    animate_traj(q0, ws_origin, r2.model, false, 1, false, false, false)
+    
+    % Insert trace paths here
+    
+    disp('e. Move R2 to q0')
+    animate_traj(q0, r2.model.fkine(q0), r2.model, false, 1, false, false, false)
+    r2.model.animate(q0);
+    
+    disp('f. Move R1 from stow away to pcb1')
+    animate_traj(r1.model.getpos, pcbs(i).pose, r1.model, pcbs(i), 1, false, false, false)
+    
+    disp('g. Move R1 from ws origin to conveyor out with pcb1')
+    animate_traj(r1.model.getpos, conv_out, r1.model, pcbs(i), 1, false, false, true)
+    
+    disp('h. Move R1 from conveyor out to q0')
+    animate_traj(r1.model.getpos, r1.model.fkine(q0), r1.model, false, 1, false, false, false)
+
+    % 8a. Animate Conveyor
+    animate_conveyor(pcbs(i), pcbs(i).pose, pcbs(i).pose - transl(0.7, 0, 0), 30);
+    if i < 2 animate_conveyor(pcbs(2), pcbs(2).pose, pcbs(2).pose - transl(0, 0.3, 0), 30); end
+    if i < 3 animate_conveyor(pcbs(3), pcbs(3).pose, pcbs(3).pose - transl(0, 0.3, 0), 30); end
+
+end
+
+
 
 
 %% lift up
@@ -116,11 +143,11 @@ end
 
 
 function animate_traj(q, dest, model, obj, path, weight, plot, move_ply)
-    if ~exist('pt', 'var'), pt = 0.03; end
+    if ~exist('pt', 'var'), pt = 0.02; end
 
     current_pose = model.fkine(model.getpos);
     
-    [qmatrix, desired] = rmrc(current_pose(1:3, 4)', dest(1:3, 4)', q, model, false, path, weight);
+    [qmatrix, desired] = rmrc(current_pose, dest, q, model, false, path, weight);
     
     if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
     
@@ -133,6 +160,27 @@ function animate_traj(q, dest, model, obj, path, weight, plot, move_ply)
 
        pause(pt);
     end
+    if move_ply == true, obj.MoveMesh(dest); end
+
 end
 
+function animate_conveyor(obj, start, finish, steps)
+    if ~exist('pt', 'var'), pt = 0.02; end
+    start_pos = start(1:3, 4)';
+    finish_pos = finish(1:3, 4)';
 
+    x = zeros(3, steps);
+    theta = zeros(3, 3, steps);
+
+    s = lspb(0,1,steps);
+    for i = 1:steps
+        x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1);       % Points in x
+        x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);       % Points in y
+        x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);       % Points in z
+    end
+
+    for i=1:steps
+        obj.tran(x(:, i)');
+        pause(pt);
+    end
+end

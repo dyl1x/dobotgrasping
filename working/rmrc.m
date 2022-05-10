@@ -4,7 +4,7 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
     if ~exist('weight', 'var'), weight = 1; end
     
     % 1.1) Set parameters for the simulation
-    t = 2;                           % Total time (s)
+    t = 1;                           % Total time (s)
     deltaT = 0.02;                   % Control frequency
     steps = t/deltaT;                % No. of steps for simulation
     delta = 2*pi/steps;              % Small angle change
@@ -21,61 +21,59 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
     angleError = zeros(3, steps);    % For plotting trajectory error
     
     % 1.3) Set up trajectory, initial pose
+    start_pos = start(1:3, 4)';
+    finish_pos = finish(1:3, 4)';
+
+    start_rot = start(1:3, 1:3);
+    finish_rot = finish(1:3, 1:3);
+
     s = lspb(0,1,steps);             % Trapezoidal trajectory scalar
-    if path == 2
+    if path == 1 % straight line
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1) + weight*sin((i/2)*delta); % Points in x
-            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2);                % Points in y
-            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);                % Points in z
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1);       % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);       % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);       % Points in z
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
+        end
+    elseif path == 2
+        for i = 1:steps
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta); % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);                % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);                % Points in z
             theta(1,i) = 0;                        % Roll angle 
             theta(2,i) = 0;                        % Pitch angle
             theta(3,i) = 0;                        % Yaw angle
         end
     elseif path == 3 % y sin change
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1);                % Points in x
-            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2) + weight*sin((i/2)*delta); % Points in y
-            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);                % Points in z
-            theta(1,i) = 0;                        % Roll angle 
-            theta(2,i) = 0;                        % Pitch angle
-            theta(3,i) = 0;                        % Yaw angle
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1);       % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2) + weight*sin((i/2)*delta); % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);       % Points in z
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
         end 
     elseif path == 4 % x and y sin change
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1) + weight*sin((i/2)*delta); % Points in x
-            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2) + weight*sin((i/2)*delta); % Points in y
-            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);                % Points in z
-            theta(1,i) = 0;                        % Roll angle 
-            theta(2,i) = 0;                        % Pitch angle
-            theta(3,i) = 0;                        % Yaw angle
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta); % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2) + weight*sin((i/2)*delta); % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);                % Points in z
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
         end
     elseif path == 5 % x and z sin change
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1) + weight*sin((i/2)*delta); % Points in x
-            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2);                           % Points in y
-            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3) + (-weight/2)*sin((i/2)*delta); % Points in y                
-            theta(1,i) = 0;                        % Roll angle 
-            theta(2,i) = 0;                        % Pitch angle
-            theta(3,i) = 0;                        % Yaw angle
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta); % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);                           % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3) + (-weight/2)*sin((i/2)*delta); % Points in y                
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
         end 
-    elseif path == 1 % straight line
-        for i = 1:steps
-            x(1,i) = (1-s(i)) * start(1) + s(i) * finish(1);       % Points in x
-            x(2,i) = (1-s(i)) * start(2) + s(i) * finish(2);       % Points in y
-            x(3,i) = (1-s(i)) * start(3) + s(i) * finish(3);       % Points in z
-            theta(1, i) = 0;                                       % Roll angle 
-            theta(2, i) = 0;                                       % Pitch angle
-            theta(3, i) = 0;                                       % Yaw angle
-        end
     end
     
     T = [rpy2r(theta(1,1), theta(2,1), theta(3,1)) x(:,1); zeros(1,3) 1];  % Create transformation of first point and angle
-%     qMatrix(1,:) = model.ikcon(T, q0 );                                    % Solve joint angles to achieve first waypoint
-    qMatrix(1,:) = model.ikine(T, q0, [1 1 1 0 0 0]);                                     % Solve joint angles to achieve first waypoint
+%     qMatrix(1,:) = model.ikcon(T, q0 );                                  % Solve joint angles to achieve first waypoint
+    qMatrix(1,:) = model.ikine(T, q0, [1 1 1 0 0 0]);                      % Solve joint angles to achieve first waypoint
     
     % 1.4) Track the trajectory with RMRC
     for i = 1:steps-1
-        disp(i);
+%         disp(i);
         T = model.fkine(qMatrix(i, :));                                    % Get forward transformation at current joint state
         deltaX = x(:, i+1) - T(1:3, 4);                                    % Get position error from next waypoint
         
