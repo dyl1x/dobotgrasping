@@ -22,7 +22,7 @@ function varargout = untitled(varargin)
 
 % Edit the above text to modify the response to help untitled
 
-% Last Modified by GUIDE v2.5 08-May-2022 18:15:00
+% Last Modified by GUIDE v2.5 10-May-2022 19:07:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -101,7 +101,7 @@ function stuff_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 hold on;
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-q = [0,pi/2,3*pi/4,constrain_joint4(pi/2,3*pi/4),0];
+q = [0,pi/2,0,constrain_joint4(pi/2,0),0];
 r1 = Dobot(ws,1,2);
 r1.model.base = transl(0.2,0,0.490)*trotz(pi);
 r2 = Dobot(ws,2,2);
@@ -114,6 +114,8 @@ axis equal
 handles.r1 = r1;
 handles.r2 = r2;
 
+
+set(handles.teachpannel, 'Visible', 'on');
 update_strings(hObject,handles);
 guidata(hObject,handles);
 
@@ -475,3 +477,189 @@ function path_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in checkbox1.
+function checkbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox1
+value = get(hObject,'Value');
+
+if value == 0
+    set(handles.vspannel, 'Visible', 'on');
+    
+    handles.centr = trnsl(0,0,0)* troty(pi/2);
+    handles.P = getP(handles.centr,0.025);
+else
+    set(handles.vspannel, 'Visible', 'off');
+end
+guidata(hObject,handles);
+
+
+
+% --- Executes on button press in vsminusx.
+function vsminusx_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminusx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(-0.01,0,0) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsminusy.
+function vsminusy_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminusy (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(0,-0.01,0) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsminusz.
+function vsminusz_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminusz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(0,0,-0.01) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsplusx.
+function vsplusx_Callback(hObject, eventdata, handles)
+% hObject    handle to vsplusx (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(0.01,0,0) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsplusy.
+function vsplusy_Callback(hObject, eventdata, handles)
+% hObject    handle to vsplusy (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(0,0.01,0) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsplusz.
+function vsplusz_Callback(hObject, eventdata, handles)
+% hObject    handle to vsplusz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.centr = trnsl(0,0,0.01) * handles.centr;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsminusroll.
+function vsminusroll_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminusroll (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+currentCent = handles.centr;
+rot = eye(4);
+rot(1:3,1:3) = handles.centr(1:3,1:3);
+currentCent = currentCent * inv(currentCent);
+currentCent = currentCent*rot*trotx(0.1);
+currentCent(1:3,4) = handles.centr(1:3,4);
+
+
+handles.centr = currentCent;
+handles.P = getP(handles.centr,0.025);
+if (~isempty(handles.surfs))
+    deletepoints
+end
+drawpoints
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsminuspitch.
+function vsminuspitch_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminuspitch (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in vsminusyaw.
+function vsminusyaw_Callback(hObject, eventdata, handles)
+% hObject    handle to vsminusyaw (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in vsplusroll.
+function vsplusroll_Callback(hObject, eventdata, handles)
+% hObject    handle to vsplusroll (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in vspluspitch.
+function vspluspitch_Callback(hObject, eventdata, handles)
+% hObject    handle to vspluspitch (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in vsplusyaw.
+function vsplusyaw_Callback(hObject, eventdata, handles)
+% hObject    handle to vsplusyaw (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+function updatevsstrings(hObject, eventdata,handles)
+% function updates the text labels for in the vspannel
+tr = handles.centr;
+set(handles.vsx, 'String',tr(1,4));
+set(handles.vsy, 'String',tr(2,4));
+set(handles.vsz, 'String',tr(3,4));
+
+guidata(hObject,handles);
+
+function drawpoints(hObject,handles)
+P = handles.P;
+pl1 = plot_sphere(P(:,1), 0.025, 'b');
+pl2 = plot_sphere(P(:,2), 0.025, 'b');
+pl3 = plot_sphere(P(:,3), 0.025, 'b');
+pl4 = plot_sphere(P(:,4), 0.025, 'b');
+
+handles.surfs = [pl1,pl2,pl3,pl4];
+guidata(hObject,handles);
+
+function deletepoints(hObject,handles)
+delete(handles.surfs)
+drawnow();
+guidata(hObject,handles);

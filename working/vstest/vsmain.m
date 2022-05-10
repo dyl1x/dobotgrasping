@@ -22,10 +22,29 @@ pStar = [662 362 362 662; 362 362 662 662];
 
 %% generate points
 
-cent = transl(0.5,0,1.2) * troty(pi/2);
+cent = transl(0.75,0,1.2) * troty(pi/2);
 P = getP(cent,0.25);
 
-plot_sphere(P, 0.025, 'b')
+pl1 = plot_sphere(P(:,1), 0.025, 'b');
+pl2 = plot_sphere(P(:,2), 0.025, 'b');
+pl3 = plot_sphere(P(:,3), 0.025, 'b');
+pl4 = plot_sphere(P(:,4), 0.025, 'b');
+
+%%
+
+cent =  cent * inv(cent);
+P = getP(cent,0.25);
+
+pl1 = plot_sphere(P(:,1), 0.025, 'b');
+pl2 = plot_sphere(P(:,2), 0.025, 'b');
+pl3 = plot_sphere(P(:,3), 0.025, 'b');
+pl4 = plot_sphere(P(:,4), 0.025, 'b');
+
+%%
+delete(pl1);
+delete(pl2);
+delete(pl3);
+delete(pl4);
 
 %% create the camera view
 cam.clf()
