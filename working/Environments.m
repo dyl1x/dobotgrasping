@@ -69,93 +69,45 @@ classdef Environments < handle
         
         %% load props
         function LoadProps(self)
+            
             hold on
-            
-            %meshload code from lab4
-            
-            % back stand and estop
-%             mesh_h = PlaceObject('models/stand.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.01)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             
-%             mesh_h = PlaceObject('models/estop.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.99)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             
-%             % front stand and estop
-%             mesh_h = PlaceObject('models/stand.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(-self.envSize-0.5,-self.envSize,0.01)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             
-%             mesh_h = PlaceObject('models/estop.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(-self.envSize-0.5,-self.envSize,0.99)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             
-%             
-%             mesh_h = PlaceObject('models/fireextinguisher.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize-0.2,0.01)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-%             
-%             mesh_h = PlaceObject('models/fireextinguisher.ply');
-%             
-%             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(-self.envSize-0.5,-(self.envSize-0.4),0.01)';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-            
-            % dobot table
+            % 1st dobot table
             mesh_h = PlaceObject('models/table.PLY');
-            
+            tf = trotz(-pi/2) * transl(-0.05, 0, 0.01)';
             vertices = get(mesh_h,'Vertices');
-            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
-            set(mesh_h,'Vertices',transformedVertices(:,1:3));                 
-            
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+
+            % 2nd dobot table
+            mesh_h = PlaceObject('models/table.PLY');
+            tf = transl(0.1, -0.45, 0.01)';
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));       
+
             % conveyor incoming
             mesh_h = PlaceObject('models/conveyor.PLY');
-            
+            tf = trotz(-pi/2) * transl(-0.33, 0.26, 0.01)';
             vertices = get(mesh_h,'Vertices');
-            transformedVertices = [vertices,ones(size(vertices,1),1)] *(trotz(-pi/2)*transl(-0.3,-0.375,0.01))';
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             
-            %c onveyor outgoing
+            % conveyor outgoing
             mesh_h = PlaceObject('models/conveyor.PLY');
+            tf = transl(-0.7, -0.4, 0.01)';
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+
+            mesh_h = PlaceObject('models/estop.ply');
             
             vertices = get(mesh_h,'Vertices');
-            transformedVertices = [vertices,ones(size(vertices,1),1)] *transl(-0.8,-0.350,0.01)';
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
-            
-            %ends here
-            
-            hold off
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(self.envSize-0.5,self.envSize/2,0.99)';
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+
         end
 
-%%  spawn in some bricks
-        function SpawnBricks(self)
-            
-            hold on
-            pcb1 = pcb(transl(self.pcbPos(1,:)));
-            pcb2 = pcb(transl(self.pcbPos(2,:)));
-            pcb3 = pcb(transl(self.pcbPos(3,:)));
-            hold off
-            
-            %check em in the array
-            self.pcbArray = [pcb1,pcb2,pcb3];
-            
-            disp('Brick positions generated and models have been loaded');
-        end
-       
     end
 end
