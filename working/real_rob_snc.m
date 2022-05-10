@@ -345,10 +345,10 @@ load('../scene_detector.mat');
 load('../shape_detector.mat');
 %%
 color_limit = 1.2; % 1.1 - 1.5
-n = 2; % num features in img
+n = 1; % num features in img
 
 % camera translation
-camera_offset =  [0.7123, -0.0686, 0.07];
+camera_offset =  [0.6550   -0.0000    0.0840];
 cam_rot = deg2rad(0); % x rot if cam facing down toward surface
 
 % Show RGB Image
@@ -376,6 +376,7 @@ intrinsic_matrix = info.receive.K;
 imshow(annot_color_img)
 
 shape_labels = strings(n, 1);
+%%
 figure;
 for i=1:n
     subplot(1, n, i)

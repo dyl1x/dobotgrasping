@@ -3,7 +3,41 @@ load('../scene_detector.mat');
 load('../shape_detector.mat');
 rosinit;
 
+%% manual setup for calibration
+%set end effector to position
+endEffectorPosition = [0.2,0,0]; % home
+endEffectorRotation = [0,0,0]; % home
+
+[targetEndEffectorPub,targetEndEffectorMsg] = rospublisher('/dobot_magician/target_end_effector_pose');
+
+targetEndEffectorMsg.Position.X = endEffectorPosition(1);
+targetEndEffectorMsg.Position.Y = endEffectorPosition(2);
+targetEndEffectorMsg.Position.Z = endEffectorPosition(3);
+
+qua = eul2quat(endEffectorRotation);
+targetEndEffectorMsg.Orientation.W = qua(1);
+targetEndEffectorMsg.Orientation.X = qua(2);
+targetEndEffectorMsg.Orientation.Y = qua(3);
+targetEndEffectorMsg.Orientation.Z = qua(4);
+
+send(targetEndEffectorPub,targetEndEffectorMsg);
+
+keyboard
+%%
+
+% Turn on the tool
+[toolStatePub, toolStateMsg] = rospublisher('/dobot_magician/target_tool_state');
+toolStateMsg.Data = [0]; % Send 1 for on and 0 for off 
+send(toolStatePub,toolStateMsg);
+
+%% ESTOP
+
+[safetyStatePublisher,safetyStateMsg] = rospublisher('/dobot_magician/target_safety_status');
+safetyStateMsg.Data = 3;
+send(safetyStatePublisher,safetyStateMsg);
+
 %% localize camera
+close all
 
 camera_offset =  [0,0,0];
 cam_rot = deg2rad(0); % x rot if cam facing down toward surface
@@ -21,12 +55,12 @@ AD_data = rossubscriber('/camera/aligned_depth_to_color/image_raw');
 aligned_img = readImage(AD_data.receive);
 
 % Show Camera Intrinsics
-% info = rossubscriber('/camera/aligned_depth_to_color/camera_info');
-% intrinsic_matrix = info.receive.K;
-intrinsic_matrix = [917.3447265625, 0.0, 636.757568359375, 0.0, 916.9466552734375, 340.2231750488281, 0.0, 0.0, 1.0];
+ info = rossubscriber('/camera/aligned_depth_to_color/camera_info');
+ intrinsic_matrix = info.receive.K;
+%intrinsic_matrix = [917.3447265625, 0.0, 636.757568359375, 0.0, 916.9466552734375, 340.2231750488281, 0.0, 0.0, 1.0];
 
 color_limit = 1.1; % 1.1 - 1.5
-n = 3; % num features in img
+n = 1; % num features in img
 
 % Detect Boxes
 [bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n, color_limit);
@@ -63,5 +97,6 @@ end
 
 %% calculate offset
 eePos = [0.2,0,0];
-guess = world_coords(:,:,2);
+guess = world_coords(:,:,1);
 camera_offset = eePos - guess;
+disp(camera_offset)
