@@ -44,13 +44,11 @@ ws_origin = transl(-0.03, -0.42, h) * trotz(pi/2);
 stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
 conv_out = transl(-0.3, -0.4, h);
 
-
-mapSize = 0.1;
-map = Environments(mapSize);
+map = Environments(0.1);
 hold on
 
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-[q2_, q3_] = deal(deg2rad(45), deg2rad(115));
+[q2_, q3_] = deal(deg2rad(35), deg2rad(105));
 q0 = [-pi/2 q2_ q3_ constrain_joint4(q2_, q3_) 0];
 
 r1 = Dobot(ws, 1, 2);
@@ -65,9 +63,9 @@ hold on
 drawnow();
 axis equal
 
-pcb1 = PCB(1, transl(-0.33, 0, 0.5) * trotz(pi/2));
-pcb2 = PCB(2, transl(-0.31, 0.3, 0.5));
-pcb3 = PCB(3, transl(-0.33, 0.6, 0.5));
+pcb1 = PCB(1, transl(-0.33, 0, h) * trotz(pi/2));
+pcb2 = PCB(2, transl(-0.31, 0.3, h));
+pcb3 = PCB(3, transl(-0.32, 0.6, h));
 pcbs = [pcb1, pcb2, pcb3];
 
 view([0 0 1]);
@@ -76,7 +74,7 @@ view([0 0 1]);
 % init joint, pcb, robot, false/obj, path 1-5, weight, plot, attach obj
 
 for i=1:length(pcbs)
-
+    disp(' ')
     disp(strcat(['PCB: ', num2str(i)]));
 
     disp('a. Move R1 from q0 to pcb1')
@@ -92,19 +90,20 @@ for i=1:length(pcbs)
     animate_traj(q0, ws_origin, r2.model, false, 1, false, false, false)
     
     % Insert trace paths here
+    trace_path(pcbs(i), r2.model, true)
     
-    disp('e. Move R2 to q0')
+    disp('f. Move R2 to q0')
     animate_traj(q0, r2.model.fkine(q0), r2.model, false, 1, false, false, false)
     r2.model.animate(q0);
     
-    disp('f. Move R1 from stow away to pcb1')
+    disp('g. Move R1 from stow away to pcb1')
     animate_traj(r1.model.getpos, pcbs(i).pose, r1.model, pcbs(i), 1, false, false, false)
     
-    disp('g. Move R1 from ws origin to conveyor out with pcb1')
+    disp('h. Move R1 from ws origin to conveyor out with pcb1')
     animate_traj(r1.model.getpos, conv_out, r1.model, pcbs(i), 1, false, false, true)
     
-    disp('h. Move R1 from conveyor out to q0')
-    animate_traj(r1.model.getpos, r1.model.fkine(q0), r1.model, false, 1, false, false, false)
+    disp('i. Move R1 from conveyor out to q0')
+    animate_traj(r1.model.getpos, r1.model.fkine(q0), r1.model, false, 5, -0.2, false, false)
 
     % 8a. Animate Conveyor
     animate_conveyor(pcbs(i), pcbs(i).pose, pcbs(i).pose - transl(0.7, 0, 0), 30);
@@ -182,5 +181,64 @@ function animate_conveyor(obj, start, finish, steps)
     for i=1:steps
         obj.tran(x(:, i)');
         pause(pt);
+    end
+end
+
+function trace_path(obj, model, plot)
+    if ~exist('pt', 'var'), pt = 0.02; end
+    % trace devel from centre pose of shape for translations agnostic of the
+    % initial coords
+
+    if obj.type == 1
+        plt = [];
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(-0.02, 0.07, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+%         if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(-0.04, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, model.base + transl(-0.3, -0.05, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+
+        disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
+        pause(3);
+
+        for i=1:length(plt), delete(plt{i}); end
+
+    end
+end
+
+function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
+    if ~exist('linespec', 'var'), linespec = 'b*'; end
+    if ~exist('pt', 'var'), pt = 0.02; end
+
+    for i=1:length(qmatrix)
+           model.animate(qmatrix(i, :));
+           ee = model.fkine(qmatrix(i, :));
+           if plot == true
+               plt = plot3(ee(1, 4), ee(2, 4), ee(3, 4), linespec, 'MarkerSize', 0.1); 
+               plots{length(plots)+1} = plt;
+           end
+           pause(pt);
     end
 end

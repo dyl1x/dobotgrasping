@@ -170,7 +170,7 @@ save("trained_network_1.mat");
 % First load in scene_dataset into ImageLabeler
 
 loadin = false;
-skip = false; % set to true for training network (post labelling)
+skip = true; % set to true for training network (post labelling)
 
 
 scene_dataset = imageDatastore('working/images/scene_dataset');
@@ -184,7 +184,7 @@ if skip == true
     return;
 end
 
-% imageLabeler(scene_dataset)
+imageLabeler(scene_dataset)
 
 % create and save label definitions to label_defs.mat file
 % export the created gTruth to workspace, extract gTruth.LabelData to a label.mat file

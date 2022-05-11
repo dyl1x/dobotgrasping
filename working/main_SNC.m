@@ -52,7 +52,7 @@ color_limit = 1.3;
 steps = 50; % trajectories
 n = 3; % num features in img
 
-filename = 'local3'; % n = 3
+filename = 'RealRobotTest1'; % n = 3
 % filename = 'RealRobotTest2'; % n = 5
 % filename = 'AllShapesTest'; % n = 12
 % filename = '3ObjAlignDepth'; % n = 3
@@ -143,7 +143,7 @@ ncol = [1 1 1];
 for i=1:n
     obj = [eye(3), world_transforms(1:3, 4, i); zeros(1, 3), 1];
     
-    [dest, ncol] = colour_shape_dest(objects, i, ncol);
+    [dest, ncol] = colour_shape_dest(objects, i, ncol, false);
     
     q1 = dobot.model.ikcon(obj, q0);
     

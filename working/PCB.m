@@ -14,12 +14,12 @@ classdef PCB <handle
         pose = eye(4);
         vertices;
         vSize;
-        type = 2;
+        type;
         point;
         position;
     end
     methods
-        function self = PCB(type,pose)
+        function self = PCB(type, pose)
             self.type = type;
             self.pose = pose;
             

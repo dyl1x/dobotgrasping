@@ -87,7 +87,7 @@ function map_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 cla 
-map = Environments(2);
+map = Environments(0.1);
 
 data = guidata(hObject);
 data.map = map;
@@ -99,25 +99,139 @@ function stuff_Callback(hObject, eventdata, handles)
 % hObject    handle to stuff (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-hold on;
+handles.h = 0.51;
+handles.pt = 0.03;
+
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
-q = [0,pi/2,0,constrain_joint4(pi/2,0),0];
-r1 = Dobot(ws,1,2);
-r1.model.base = transl(0.2,0,0.490)*trotz(pi);
-r2 = Dobot(ws,2,2);
-r2.model.base = transl(-0.2,0,0.490)*trotz(-pi/2);
-r1.model.animate(q);
-r2.model.animate(q);
+[q2_, q3_] = deal(deg2rad(35), deg2rad(105));
+q0 = [-pi/2 q2_ q3_ constrain_joint4(q2_, q3_) 0];
+
+r1 = Dobot(ws, 1, 2);
+r1.model.base = transl(-0.1, -0.15, 0.49) * trotz(pi);
+r1.model.animate(q0);
+
+r2 = Dobot(ws, 2, 2);
+r2.model.base = transl(0.2, -0.45, 0.49) * trotz(pi);
+r2.model.animate(q0);
+hold on
+
 drawnow();
 axis equal
 
+pcb1 = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
+pcb2 = PCB(2, transl(-0.31, 0.3, handles.h));
+pcb3 = PCB(3, transl(-0.33, 0.6, handles.h));
+pcbs = [pcb1, pcb2, pcb3];
+
+view([0 0 1]);
+
 handles.r1 = r1;
 handles.r2 = r2;
-
+handles.pcbs = pcbs;
+handles.q0 = q0;
 
 set(handles.teachpannel, 'Visible', 'on');
 update_strings(hObject,handles);
 guidata(hObject,handles);
+
+
+function animate_traj(q, dest, model, obj, path, weight, plot, move_ply)
+    if ~exist('pt', 'var'), pt = 0.02; end
+
+    current_pose = model.fkine(model.getpos);
+    [qmatrix, desired] = rmrc(current_pose, dest, q, model, false, path, weight);
+    
+    if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+    for i=1:length(qmatrix)
+       model.animate(qmatrix(i, :));
+       ee = model.fkine(qmatrix(i, :));
+
+       if plot == true, plot3(ee(1, 4), ee(2, 4), ee(3, 4), 'b*'); end
+       if move_ply == true, obj.MoveMesh(ee); end
+
+       pause(pt);
+    end
+    if move_ply == true, obj.MoveMesh(dest); end
+
+
+function animate_conveyor(obj, start, finish, steps)
+    if ~exist('pt', 'var'), pt = 0.02; end
+    start_pos = start(1:3, 4)';
+    finish_pos = finish(1:3, 4)';
+
+    x = zeros(3, steps);
+    theta = zeros(3, 3, steps);
+
+    s = lspb(0,1,steps);
+    for i = 1:steps
+        x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1);       % Points in x
+        x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);       % Points in y
+        x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);       % Points in z
+    end
+
+    for i=1:steps
+        obj.tran(x(:, i)');
+        pause(pt);
+    end
+
+
+function trace_path(obj, model, plot)
+    if ~exist('pt', 'var'), pt = 0.02; end
+    % trace devel from centre pose of shape for translations agnostic of the
+    % initial coords
+
+    if obj.type == 1
+        plt = [];
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(-0.02, 0.07, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+%         if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(-0.04, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+
+        cp = model.fkine(model.getpos);
+        [qmatrix, desired] = rmrc(cp, model.base + transl(-0.25, -0.15, 0), model.getpos, model, false, 1, false);
+        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+
+        disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
+        pause(3);
+
+        for i=1:length(plt), delete(plt{i}); end
+
+    end
+ 
+
+function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
+    if ~exist('linespec', 'var'), linespec = 'b*'; end
+    if ~exist('pt', 'var'), pt = 0.02; end
+
+    for i=1:length(qmatrix)
+           model.animate(qmatrix(i, :));
+           ee = model.fkine(qmatrix(i, :));
+           if plot == true
+               plt = plot3(ee(1, 4), ee(2, 4), ee(3, 4), linespec, 'MarkerSize', 0.1); 
+               plots{length(plots)+1} = plt;
+           end
+           pause(pt);
+    end
 
 
 % --- Executes on button press in simstarter.
@@ -125,7 +239,50 @@ function simstarter_Callback(hObject, eventdata, handles)
 % hObject    handle to simstarter (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-res
+
+ws_origin = transl(-0.03, -0.42, handles.h) * trotz(pi/2);
+stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
+conv_out = transl(-0.3, -0.4, handles.h);
+
+for i=1:length(handles.pcbs)
+    disp(' ')
+    disp(strcat(['PCB: ', num2str(i)]));
+
+    disp('a. Move R1 from q0 to pcb1')
+    animate_traj(handles.q0, handles.pcbs(i).pose, handles.r1.model, false, 1, 0, false, false);
+    
+    disp('b. Move R1 to ws origin')
+    animate_traj(handles.r1.model.getpos, ws_origin, handles.r1.model, handles.pcbs(i), 5, -0.1, false, true)
+    
+    disp('c. Move R1 to stow away pose for laser operation')
+    animate_traj(handles.r1.model.getpos, stow_away, handles.r1.model, false, 1, false, false, false)
+    
+    disp('d. Move R2 to ws origin')
+    animate_traj(handles.q0, ws_origin, handles.r2.model, false, 1, false, false, false)
+    
+    % Insert trace paths here
+    trace_path(handles.pcbs(i), handles.r2.model, true)
+    
+    disp('f. Move R2 to q0')
+    animate_traj(handles.q0, handles.r2.model.fkine(handles.q0), handles.r2.model, false, 1, false, false, false)
+    handles.r2.model.animate(handles.q0);
+    
+    disp('g. Move R1 from stow away to pcb1')
+    animate_traj(handles.r1.model.getpos, handles.pcbs(i).pose, handles.r1.model, handles.pcbs(i), 1, false, false, false)
+    
+    disp('h. Move R1 from ws origin to conveyor out with pcb1')
+    animate_traj(handles.r1.model.getpos, conv_out, handles.r1.model, handles.pcbs(i), 1, false, false, true)
+    
+    disp('i. Move R1 from conveyor out to q0')
+    animate_traj(handles.r1.model.getpos, handles.r1.model.fkine(handles.q0), handles.r1.model, false, 5, -0.2, false, false)
+
+    % 8a. Animate Conveyor
+    animate_conveyor(handles.pcbs(i), handles.pcbs(i).pose, handles.pcbs(i).pose - transl(0.7, 0, 0), 30);
+    if i < 2 animate_conveyor(handles.pcbs(2), handles.pcbs(2).pose, handles.pcbs(2).pose - transl(0, 0.3, 0), 30); end
+    if i < 3 animate_conveyor(handles.pcbs(3), handles.pcbs(3).pose, handles.pcbs(3).pose - transl(0, 0.3, 0), 30); end
+
+end
+
 
 % --- Executes on button press in estop.
 function estop_Callback(hObject, eventdata, handles)
@@ -267,7 +424,11 @@ guidata(hObject,handles);
 function zminus_Callback(hObject, eventdata, handles)
 % hObject    handle to zminus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% handles    structure with handles and user data (see GUIDATA)ws_origin = transl(-0.03, -0.42, h) * trotz(pi/2);
+
+stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
+conv_out = transl(-0.3, -0.4, h);
+
 q = handles.r1.model.getpos;
 tr = handles.r1.model.fkine(q);
 
@@ -472,7 +633,7 @@ function path_CreateFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
+% Hint: edit conr2.model.base + transl(-0.3, -0.05, 0)trols usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -669,4 +830,3 @@ function deletepoints(hObject,handles)
     % make a class for the points
 %     drawnow();
 guidata(hObject,handles);
-

@@ -69,10 +69,10 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
     
     T = [rpy2r(theta(1,1), theta(2,1), theta(3,1)) x(:,1); zeros(1,3) 1];  % Create transformation of first point and angle
 %     qMatrix(1,:) = model.ikcon(T, q0 );                                  % Solve joint angles to achieve first waypoint
-    qMatrix(1,:) = model.ikine(T, q0, [1 1 1 0 0 0]);                      % Solve joint angles to achieve first waypoint
+    qMatrix(1,:) = model.ikine(T, model.getpos, [1 1 1 0 0 0]);                      % Solve joint angles to achieve first waypoint
     
     % 1.4) Track the trajectory with RMRC
-    for i = 1:steps-1
+    for i=1:steps-1
 %         disp(i);
         T = model.fkine(qMatrix(i, :));                                    % Get forward transformation at current joint state
         deltaX = x(:, i+1) - T(1:3, 4);                                    % Get position error from next waypoint
@@ -158,3 +158,8 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
         refline(0,epsilon)
         title('Manipulability')
     end
+end
+
+
+
+
