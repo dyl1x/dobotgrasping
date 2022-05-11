@@ -22,7 +22,7 @@ pStar = [662 362 362 662; 362 362 662 662];
 
 %% generate points
 
-cent = transl(0.75,0,1.2) * troty(pi/2);
+cent = transl(1,0,1.2) * troty(pi/2);
 P = getP(cent,0.25);
 
 pl1 = plot_sphere(P(:,1), 0.025, 'b');

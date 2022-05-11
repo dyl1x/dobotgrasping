@@ -487,15 +487,17 @@ function checkbox1_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox1
 value = get(hObject,'Value');
-
-if value == 0
+disp(value)
+if value == 1
     set(handles.vspannel, 'Visible', 'on');
     
-    handles.centr = trnsl(0,0,0)* troty(pi/2);
+    handles.centr = transl(0,0,0)* troty(pi/2);
     handles.P = getP(handles.centr,0.025);
+    drawpoints(hObject,handles);
 else
     set(handles.vspannel, 'Visible', 'off');
 end
+data = guidata(hObject)
 guidata(hObject,handles);
 
 
@@ -505,12 +507,10 @@ function vsminusx_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminusx (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(-0.01,0,0) * handles.centr;
+handles.centr = transl(-0.01,0,0) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -519,12 +519,10 @@ function vsminusy_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminusy (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(0,-0.01,0) * handles.centr;
+handles.centr = transl(0,-0.01,0) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -533,12 +531,10 @@ function vsminusz_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminusz (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(0,0,-0.01) * handles.centr;
+handles.centr = transl(0,0,-0.01) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -547,12 +543,10 @@ function vsplusx_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusx (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(0.01,0,0) * handles.centr;
+handles.centr = transl(0.01,0,0) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -561,12 +555,10 @@ function vsplusy_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusy (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(0,0.01,0) * handles.centr;
+handles.centr = transl(0,0.01,0) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -575,12 +567,10 @@ function vsplusz_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusz (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.centr = trnsl(0,0,0.01) * handles.centr;
+handles.centr = transl(0,0,0.01) * handles.centr;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -593,16 +583,15 @@ currentCent = handles.centr;
 rot = eye(4);
 rot(1:3,1:3) = handles.centr(1:3,1:3);
 currentCent = currentCent * inv(currentCent);
-currentCent = currentCent*rot*trotx(0.1);
+currentCent = currentCent*rot*trotx(-0.1);
 currentCent(1:3,4) = handles.centr(1:3,4);
 
 
 handles.centr = currentCent;
 handles.P = getP(handles.centr,0.025);
-if (~isempty(handles.surfs))
-    deletepoints
-end
-drawpoints
+
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
 
 guidata(hObject,handles);
 
@@ -625,7 +614,21 @@ function vsplusroll_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusroll (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+currentCent = handles.centr;
+rot = eye(4);
+rot(1:3,1:3) = handles.centr(1:3,1:3);
+currentCent = currentCent * inv(currentCent);
+currentCent = currentCent*rot*trotx(0.1);
+currentCent(1:3,4) = handles.centr(1:3,4);
 
+
+handles.centr = currentCent;
+handles.P = getP(handles.centr,0.025);
+
+deletepoints(hObject,handles);
+drawpoints(hObject,handles);
+
+guidata(hObject,handles);
 
 % --- Executes on button press in vspluspitch.
 function vspluspitch_Callback(hObject, eventdata, handles)
@@ -650,16 +653,20 @@ set(handles.vsz, 'String',tr(3,4));
 guidata(hObject,handles);
 
 function drawpoints(hObject,handles)
+% plots the tracking spheres
 P = handles.P;
 pl1 = plot_sphere(P(:,1), 0.025, 'b');
 pl2 = plot_sphere(P(:,2), 0.025, 'b');
 pl3 = plot_sphere(P(:,3), 0.025, 'b');
 pl4 = plot_sphere(P(:,4), 0.025, 'b');
 
-handles.surfs = [pl1,pl2,pl3,pl4];
+handles.surfs = pl1;
+data = guidata(hObject)
 guidata(hObject,handles);
 
 function deletepoints(hObject,handles)
-delete(handles.surfs)
-drawnow();
+% deletes the plotted ones
+    % make a class for the points
+%     drawnow();
 guidata(hObject,handles);
+
