@@ -1,27 +1,25 @@
 %% SNC Group Assignment
 % Dobot control and grasping
 
-% Add toolboxes to readme, other load up conditions GoogLeNet
-
+% cd into working directory (pwd = 'dobotgrasping/working')
 
 close all
 clearvars
 clc
 set(0,'DefaultFigureWindowStyle','docked');
 
-% 1. Capturing images from camera
+% 1. Training : Capturing training images from camera
 % 2. ROS BAGS : Get Image, detect shape, simulate in scene with camera
 % 3. ROS SUBS : Subscribe to camera, detect objects, calc c2b [x, y, z]
 
-% 4. ROS BAGS : Load/Explore
-% 5. ROS BAGS : Robot Control
-% 6. ROS BAGS : Visualnetise as point cloud
-% 7. ROS BAGS : Extract Image
+% See real_rob_snc.m for control of the real dobot with the integration of
+% the img processing functions.
 
 
-%%
-idx = 51;
 %% 1. Capture Images from camera with ros subscription 
+% 1.a manually rearrange shapes in front of cam
+idx = 51;
+%% 1.b saving with new  filename to image directory
 
 % rosinit()
 sub = rossubscriber("/camera/color/image_raw");
@@ -32,28 +30,21 @@ imshow(i)
 % imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
 % idx = idx + 1;
 
-%% 2. ROS BAGS : extract img, detect shape, place in sim
+%% 2. ROS BAGS : Load Scene & Shape Detectors
 
 load('scene_detector.mat')
 load('shape_detector.mat')
 
-%% 2.1 Calc camera coordinates from known calibration image
-
-
-filename = 'local3'; % n = 3
-bag = rosbag(strcat(['bag/', filename, '.bag']));
-
-
-%% 2. 
+%% 2. 1 Animate Dobot in Simulation from ROS BAG
 % close all
 % clc
 
 color_limit = 1.3;
 steps = 50; % trajectories
-n = 3; % num features in img
+n = 5; % num features in img
 
-filename = 'local3'; % n = 3
-% filename = 'RealRobotTest2'; % n = 5
+% filename = 'local3'; % n = 3
+filename = 'RealRobotTest2'; % n = 5
 % filename = 'AllShapesTest'; % n = 12
 % filename = '3ObjAlignDepth'; % n = 3
 % filename = 'CubesPyramidTest1'; % n = 6

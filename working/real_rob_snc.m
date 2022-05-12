@@ -1,3 +1,17 @@
+
+%% Real Robot Control - Dobot Magician
+
+% 1. Manual Control : Sections of code for explicit manual control of Dobot
+% 2. Real Robot Control : Move robot between known points to test accuracy and calibrate
+% 3. Real Robot Control : Integrate Camera and Img Processing functions for payload coordinates
+
+
+%% 
+% 
+% 
+% 1. Manual Control
+
+%% Sub to safety topic
 rosinit;
 
 safetyStatusSubscriber = rossubscriber('/dobot_magician/safety_status');
@@ -158,7 +172,25 @@ send(toolStatePub,toolStateMsg);
 
 
 
-%% 1. Loop, Stack, unstack, return shapes (Real Robot Control)
+
+
+
+
+
+
+%% 
+% 
+% 
+% 
+% 2. Real Robot Control : Move robot between known points to test accuracy and calibrate
+
+% pass in actual positions to manually calibrate the dobot to shapes in the
+% environment to determine if the accuracy of end effector pose is adequate
+% for demonstration.
+
+% Alternate between dest positions to switch between stacked and rows at a
+% set height
+
 
 start = [0.2599, -0.1526, -0.043;
          0.1716, -0.05384, -0.043;
@@ -339,13 +371,19 @@ end
 
 
 
-%% 2. Connect to Camera to feed points for Real Dobot
+%% 
+% 
+% 
+% 3. Real Robot Control : Integrate Camera and Img Processing functions for payload coordinates
+
 
 load('../scene_detector.mat');
 load('../shape_detector.mat');
+
 %%
+
 color_limit = 1.2; % 1.1 - 1.5
-n = 1; % num features in img
+n = 1; % num features in img (manually add to help object detector)
 
 % camera translation
 camera_offset =  [0.6550   -0.0000    0.0840];
