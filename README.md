@@ -3,6 +3,9 @@
 
 Sensors & Control Lab Project AUT 2022
 
+<img src="Progress4.PNG"/>
+![Progress](Progress4.PNG)
+
 ## Info
 
 Brief:   To detect, organise and stack shapes in the workspace using an Intel RealSense Camera and the Dobot Magician Robot Arm.
@@ -33,6 +36,10 @@ The world coordinates of the payloads in the robot frame are then picked and pla
 
 ## Getting Started
 
-1. Connect Dobot and Intel Camera to local system
-2. Open `working/main_SNC.m` and run the first cells
+### Simulation using ros bag
+1. Open `working/main_SNC.m`, follow comments
 
+
+### Real Robot Control
+1. Connect Dobot and Intel Camera to local system
+2. Open `working/real_rob_control.m`, follow comments
