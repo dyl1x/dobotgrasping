@@ -3,12 +3,17 @@
 
 Sensors & Control Lab Project AUT 2022
 
-<img src="Progress4.png"/>
-![Progress](Progress4.png)
+<img src="clg1.png"/>
+
+<img src="clg2.png"/>
 
 ## Info
 
-Brief:   To detect, organise and stack shapes in the workspace using an Intel RealSense Camera and the Dobot Magician Robot Arm.
+#### Brief:   
+
+To detect, organise and stack shapes in the workspace using an Intel RealSense Camera and the Dobot Magician Robot Arm.
+
+#### Execution:
 
 The camera image is used as the input to the control logic implemented in MATLAB. 
 A series of 52 scene images and 62 shape images have been used to train an two Deep Learning networks. An RCNNObjectDetector network was used to detect bounding box points around sections of the scene image. A GoogleNet network model was used to classify the bounding box section against the library of 12 shapes used for training. The ImageLabeler app was used to draw the bounding boxes over the training images for the scene detector. 

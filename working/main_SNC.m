@@ -41,10 +41,10 @@ load('shape_detector.mat')
 
 color_limit = 1.3;
 steps = 50; % trajectories
-n = 5; % num features in img
+n = 3; % num features in img
 
 % filename = 'local3'; % n = 3
-filename = 'RealRobotTest2'; % n = 5
+filename = 'RealRobotTest1'; % n = 5
 % filename = 'AllShapesTest'; % n = 12
 % filename = '3ObjAlignDepth'; % n = 3
 % filename = 'CubesPyramidTest1'; % n = 6
