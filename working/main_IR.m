@@ -70,6 +70,16 @@ pcbs = [pcb1, pcb2, pcb3];
 
 view([0 0 1]);
 
+centerPoint = [0, 0, 0];
+radii = [0.07, 0.07, 0.04];
+[X,Y,Z] = ellipsoid( centerPoint(1), centerPoint(2), centerPoint(3), radii(1), radii(2), radii(3) );
+for i = 1:length(q0)
+    r1.model.points{i} = [X(:),Y(:),Z(:)];
+    r1.model.faces{i} = delaunay(r1.model.points{i});    
+end
+
+r1.model.plot3d(q0);
+
 % animate traj arguments
 % init joint, pcb, robot, false/obj, path 1-5, weight, plot, attach obj
 
@@ -241,4 +251,11 @@ function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
            end
            pause(pt);
     end
+end
+
+function algebraicDist = GetAlgebraicDist(points, centerPoint, radii)
+
+algebraicDist = ((points(:,1)-centerPoint(1))/radii(1)).^2 ...
+              + ((points(:,2)-centerPoint(2))/radii(2)).^2 ...
+              + ((points(:,3)-centerPoint(3))/radii(3)).^2;
 end

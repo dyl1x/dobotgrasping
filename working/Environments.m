@@ -31,7 +31,7 @@ classdef Environments < handle
         % other models are not mine, but coloured by me.
         function GenerateEnv(self)
             
-            disp('generating environment...');
+            disp('generating environment ...');
             %surf(x,y,z)
             %x = [left top, right top, left b, right b]
             %floor
@@ -61,7 +61,7 @@ classdef Environments < handle
             
             axis equal
             
-            disp('environment gerating comleted,');
+            disp('environment completed');
             
             hold off
         end
