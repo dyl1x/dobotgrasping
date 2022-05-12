@@ -3,8 +3,8 @@
 
 Sensors & Control Lab Project AUT 2022
 
-<img src="Progress4.PNG"/>
-![Progress](Progress4.PNG)
+<img src="Progress4.png"/>
+![Progress](Progress4.png)
 
 ## Info
 
