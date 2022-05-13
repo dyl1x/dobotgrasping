@@ -35,8 +35,8 @@ classdef Environments < handle
             %surf(x,y,z)
             %x = [left top, right top, left b, right b]
             %floor
-            floorSize = self.envSize +1;
-            surf([-floorSize, -floorSize; floorSize, floorSize],[-floorSize, floorSize; -floorSize, floorSize],[0.01,0.01;0.01,0.01],...
+            floorSize = self.envSize + 0.5;
+            surf([-1.25, -1.25; 0.6, 0.6],[-0.8, 0.8; -0.8, 0.8],[0.01,0.01;0.01,0.01],...
                 'CData', imread('images/floor.jpg'), 'FaceColor','texturemap');
             hold on
             %fenced walls

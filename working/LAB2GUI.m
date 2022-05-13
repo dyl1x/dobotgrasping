@@ -44,6 +44,9 @@ end
 % --- Executes just before LAB2GUI is made visible.
 function LAB2GUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
+handles.exitbutton.UserData = 0;
+handles.simstarter.UserData = 0;
+
 % Choose default command line output for LAB2GUI
 handles.output = hObject;
 
@@ -94,7 +97,7 @@ guidata(hObject,data);
 function stuff_Callback(hObject, eventdata, handles)
 
 handles.h = 0.51;
-handles.pt = 0.03;
+handles.pt = 0.01;
 
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 [q2_, q3_] = deal(deg2rad(35), deg2rad(105));
@@ -144,10 +147,11 @@ guidata(hObject,handles);
 %
 
 
-function animate_traj(q, dest, model, obj, path, weight, plot, move_ply)
-    if ~exist('pt', 'var'), pt = 0.02; end
+function animate_traj(handles, dest, model, obj, path, weight, plot, move_ply)
+    if ~exist('pt', 'var'), pt = handles.pt; end
 
     current_pose = model.fkine(model.getpos);
+    q = model.getpos;
     [qmatrix, desired] = rmrc(current_pose, dest, q, model, false, path, weight);
     
     if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
@@ -159,12 +163,13 @@ function animate_traj(q, dest, model, obj, path, weight, plot, move_ply)
        if move_ply == true, obj.MoveMesh(ee); end
 
        pause(pt);
+       if handles.exitbutton.UserData == 1, return; end
     end
     if move_ply == true, obj.MoveMesh(dest); end
 
 
-function animate_dual_traj(qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
-    if ~exist('pt', 'var'), pt = 0.02; end              % pause time
+function animate_dual_traj(handles, qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
+    if ~exist('pt', 'var'), pt = handles.pt; end              % pause time
     if ~exist('mp', 'var'), mp = [false, false]; end    % are we moving ply for each model
     if ~exist('o', 'var'), o = [false, false]; end      % obj on end effector
     if ~exist('p', 'var'), p = [1, 1]; end              % path number 1 for a straight line (rmrc)
@@ -194,6 +199,7 @@ function animate_dual_traj(qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
        if mp(2) == true, o(2).MoveMesh(ee2); end
 
        pause(pt);
+       if handles.exitbutton.UserData == 1, return; end
     end
     if mp(1) == true, o(1).MoveMesh(ds1); end
     if mp(2) == true, o(2).MoveMesh(ds2); end
@@ -297,124 +303,153 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
     if plot == true, m1.plot3d(qm1(1, :)); end
 
 
-function trace_path(obj, model, plot)
-    if ~exist('pt', 'var'), pt = 0.02; end
-    % trace devel from centre pose of shape for translations agnostic of the
-    % initial coords
+function trace_path(handles, obj, model, plot)
+    if ~exist('pt', 'var'), pt = handles.pt; end
 
+    plt = [];
      if obj.type == 1
-        plt = [];
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.02, 0.07, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
-%         if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+        
+        tfs = zeros(4, 4, 18);
+        tfs(:, :, 1) = transl(-0.01, 0.08, 0.005);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 2) = transl(0.035, 0, 0);
+        tfs(:, :, 3) = transl(-0.045, -0.02, 0);
+        tfs(:, :, 4) = transl(0, -0.02, 0);
+        tfs(:, :, 5) = transl(0.045, 0.02, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.04, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 6) = transl(0, -0.02, 0);
+        tfs(:, :, 7) = transl(0, -0.02, 0);
+        tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 9) = transl(0, -0.02, 0);
+        tfs(:, :, 10) = transl(0.035, 0.0175, 0);
+        
+        tfs(:, :, 11) = transl(0.005, -0.02, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 12) = transl(-0.02, 0, 0);
+        tfs(:, :, 13) = transl(0, -0.02, 0);
+        tfs(:, :, 14) = transl(0.02, 0, 0);
+        
+        tfs(:, :, 15) = transl(0, -0.02, 0);
+        tfs(:, :, 16) = transl(-0.025, 0, 0);
+        tfs(:, :, 17) = transl(-0.025, 0.025, 0);
+        tfs(:, :, 18) = transl(0, -0.05, 0);
+        tfs(:, :, 19) = transl(0.045, 0, 0);
+        
+        tfs(:, :, 20) = transl(-0.1, -0.1, 0);
+        
+        for i=1:length(tfs)
+            cp = model.fkine(model.getpos);
+            if i == 1 || i == 6 || i == 9 || i == 11 || i == 15 || i == 20
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+            else
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+            end
+        end
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, model.base + transl(-0.25, -0.15, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+    elseif obj.type == 2 % More complex shape
+        tfs = zeros(4, 4, 20);
 
-        disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
-        pause(2);
+        tfs(:, :, 1) = transl(0.04, 0.03, 0.005);
 
-        for i=1:length(plt), delete(plt{i}); end
+        tfs(:, :, 2) = transl(-0.05, 0, 0);
+        tfs(:, :, 3) = transl(0, -0.02, 0);
+        tfs(:, :, 4) = transl(-0.05, 0, 0);
 
-    elseif obj.type == 2
-        plt = [];
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.02, 0.07, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
-%         if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+        tfs(:, :, 5) = transl(0, -0.01, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 6) = transl(0.06, 0, 0);
+        tfs(:, :, 7) = transl(0, 0.015, 0);
+        tfs(:, :, 8) = transl(0.02, 0, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.04, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 9) = transl(0, -0.015, 0);
+        tfs(:, :, 10) = transl(-0.01, 0, 0);
+        tfs(:, :, 11) = transl(0, -0.01, 0);
+        tfs(:, :, 12) = transl(-0.07, 0, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 13) = transl(0.09, -0.06, 0);
+        tfs(:, :, 14) = transl(-0.09, 0.02, 0);
+        tfs(:, :, 15) = transl(0, 0.02, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 16) = transl(0.02, 0, 0);
+        tfs(:, :, 17) = transl(0, -0.02, 0);
+        tfs(:, :, 18) = transl(0.04, 0, 0);
+        tfs(:, :, 19) = transl(0.02, 0, 0);
+        
+        tfs(:, :, 20) = transl(-0.15, -0.15, 0);
+        
+        for i=1:length(tfs)
+            cp = model.fkine(model.getpos);
+            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16 || i == 20
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+            else
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'm*');
+            end
+        end
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, model.base + transl(-0.25, -0.15, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
+    elseif obj.type == 3 % Circular shape
 
-        disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
-        pause(2);
+        tfs = zeros(4, 4, 7);
+        tfs(:, :, 1) = transl(-0.045, 0.05, 0.005);
 
-        for i=1:length(plt), delete(plt{i}); end
+        tfs(:, :, 2) = transl(0.1, -0.1, 0);
+        tfs(:, :, 3) = transl(-0.01, 0.01, 0);
 
-    elseif obj.type == 3
-        plt = [];
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.02, 0.07, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
-%         if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+        tfs(:, :, 4) = transl(-0.08, 0.08, 0);
+        tfs(:, :, 5) = transl(0.01, -0.01, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 6) = transl(0.06, -0.06, 0);
+        tfs(:, :, 7) = transl(-0.01, 0.01, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(-0.04, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 8) = transl(-0.04, 0.04, 0);
+        tfs(:, :, 9) = transl(0.01, -0.01, 0);
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+        tfs(:, :, 10) = transl(0, -0.04, 0);
+        tfs(:, :, 11) = transl(-0.25, -0.15, 0);
+        
+        for i=1:length(tfs)
+            cp = model.fkine(model.getpos);
+            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10 || i == 11
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+            elseif i == 2
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.05);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+            elseif i == 4
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, 0.05);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+            elseif i == 6
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.025);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+            elseif i == 8
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, 0.025);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+            else
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+            end
+        end
+     end
+     
+     disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
+     if handles.exitbutton.UserData == 1, pause(1); closereq(); return; end
+%      pause(6);
+%      keyboard;
 
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0.04, 0, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
-
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, cp + transl(0, -0.04, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
-
-        cp = model.fkine(model.getpos);
-        [qmatrix, desired] = rmrc(cp, model.base + transl(-0.25, -0.15, 0), model.getpos, model, false, 1, false);
-        plt = loop_qmatrix(qmatrix, model, plt, false, false);
-
-        disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
-        pause(2);
-
-        for i=1:length(plt), delete(plt{i}); end
-    end
+     for i=1:length(plt), delete(plt{i}); end
  
 
 function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
     if ~exist('linespec', 'var'), linespec = 'b*'; end
-    if ~exist('pt', 'var'), pt = 0.02; end
+    if ~exist('pt', 'var'),  pt = 0.005; end
 
     for i=1:length(qmatrix)
            model.animate(qmatrix(i, :));
@@ -444,58 +479,94 @@ algebraicDist = ((points(:,1)-centerPoint(1))/radii(1)).^2 ...
 % --- Executes on button press in simstarter.
 function simstarter_Callback(hObject, eventdata, handles)
 
-% workspace origin (where transporter and laser could collide)
-ws_origin = transl(-0.03, -0.42, handles.h) * trotz(pi/2);
+handles.simstarter.UserData = 1;
+guidata(hObject, handles)
+i = 1;
+l = 1;
 
-% transporter stow pos when laser operating
-stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
+while (1)
 
-% exit position
-conv_out = transl(-0.3, -0.4, handles.h);
+    steps = 9;
 
-for i=1:length(handles.pcbs)
-    disp(' ')
-    disp(strcat(['PCB: ', num2str(i)]));
+    if l > 3, break; end
+    if handles.exitbutton.UserData == 1, break; end
 
-    disp('a. SEQ -- Move R1 from q0 to pcb1')
-    animate_traj(handles.q0, handles.pcbs(i).pose, handles.r1.model, false, 1, 0, false, false);
-    
-    disp('b. SEQ -- Move R1 to ws origin')
-    animate_traj(handles.r1.model.getpos, ws_origin, handles.r1.model, handles.pcbs(i), 5, -0.1, false, true)
-    
-%     disp('c. SEQ -- Move R1 to stow away pose for laser operation')
-%     animate_traj(handles.r1.model.getpos, stow_away, handles.r1.model, false, 1, false, false, false)
-%     
-%     disp('d. SEQ - Move R2 to ws origin')
-%     animate_traj(handles.q0, ws_origin, handles.r2.model, false, 1, false, false, false)
-    
-    disp('c. & d. DUAL - Move R1 to stow away pose for laser operation & Move R2 to ws origin')
-    animate_dual_traj(handles.r1.model.getpos, stow_away, handles.r1.model, handles.r2.model.getpos, ws_origin, handles.r2.model, false);
-    
-    % Insert trace paths here
-    trace_path(handles.pcbs(i), handles.r2.model, true)
-    
-    disp('f. Move R2 to q0')
-    animate_traj(handles.q0, handles.r2.model.fkine(handles.q0), handles.r2.model, false, 1, false, false, false)
-    handles.r2.model.animate(handles.q0);
-    
-    disp('g. Move R1 from stow away to pcb1')
-    animate_traj(handles.r1.model.getpos, handles.pcbs(i).pose, handles.r1.model, handles.pcbs(i), 1, false, false, false)
-    
-    disp('h. Move R1 from ws origin to conveyor out with pcb1')
-    animate_traj(handles.r1.model.getpos, conv_out, handles.r1.model, handles.pcbs(i), 1, false, false, true)
-    
-    disp('i. Move R1 from conveyor out to q0')
-    animate_traj(handles.r1.model.getpos, handles.r1.model.fkine(handles.q0), handles.r1.model, false, 5, -0.2, false, false)
-    
-    % 8a. Animate Conveyor
-    animate_conveyor(handles.pcbs(i), handles.pcbs(i).pose, handles.pcbs(i).pose - transl(0.7, 0, 0), 30);
-    if i < 2 animate_conveyor(handles.pcbs(2), handles.pcbs(2).pose, handles.pcbs(2).pose - transl(0, 0.3, 0), 30); end
-    if i < 3 animate_conveyor(handles.pcbs(3), handles.pcbs(3).pose, handles.pcbs(3).pose - transl(0, 0.3, 0), 30); end
+
+    if mod(i, steps * l) == 0
+        l = l + 1;
+    else
+        sequences(i, steps, handles);
+        i = i + 1;
+    end
 
 end
 
+if handles.exitbutton.UserData == 1
+    disp('Returning out of sim start')
+    closereq();
+%     return;
+end
 
+
+
+function sequences(i, steps, handles)
+    % workspace origin (where transporter and laser could collide)
+    ws_origin = transl(-0.03, -0.42, handles.h) * trotz(pi/2);
+    
+    % transporter stow pos when laser operating
+    stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
+    
+    % exit position
+    conv_out = transl(-0.3, -0.4, handles.h);
+
+    if mod(i, steps) == 1
+        disp(' ')
+        disp(strcat(['PCB: ', num2str(ceil(i/steps))]));
+
+        disp('a. SEQ -- Move R1 from q0 to pcb')
+        animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, false, 1, 0, false, false);
+
+    elseif mod(i, steps) == 2
+        disp('b. SEQ -- Move R1 to ws origin')
+        animate_traj(handles, ws_origin, handles.r1.model, handles.pcbs(ceil(i / steps)), 5, -0.1, false, true)
+
+%     disp('c. SEQ -- Move R1 to stow away pose for laser operation')
+%     animate_traj(handles, stow_away, handles.r1.model, false, 1, false, false, false)
+%     
+%     disp('d. SEQ - Move R2 to ws origin')
+%     animate_traj(handles, ws_origin, handles.r2.model, false, 1, false, false, false)
+
+    elseif mod(i, steps) == 3
+        disp('c. & d. DUAL - Move R1 to stow away pose for laser operation & Move R2 to ws origin')
+        animate_dual_traj(handles, handles.r1.model.getpos, stow_away, handles.r1.model, handles.r2.model.getpos, ws_origin, handles.r2.model, false);
+
+    elseif mod(i, steps) == 4
+        % Insert trace paths here
+        trace_path(handles, handles.pcbs(ceil(i / steps)), handles.r2.model, true)
+
+    elseif mod(i, steps) == 5
+        disp('f. Move R2 to q0')
+        animate_traj(handles, handles.r2.model.fkine(handles.q0), handles.r2.model, false, 1, false, false, false)
+        handles.r2.model.animate(handles.q0);
+
+    elseif mod(i, steps) == 6
+        disp('g. Move R1 from stow away to pcb1')
+        animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, false)
+
+    elseif mod(i, steps) == 7
+        disp('h. Move R1 from ws origin to conveyor out with pcb1')
+        animate_traj(handles, conv_out, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, true)
+
+    elseif mod(i, steps) == 8
+        disp('i. Move R1 from conveyor out to q0')
+        animate_traj(handles, handles.r1.model.fkine(handles.q0), handles.r1.model, false, 5, -0.2, false, false)
+
+    elseif mod(i, steps) == 0
+        % 8a. Animate Conveyor
+        animate_conveyor(handles.pcbs(ceil(i / steps)), handles.pcbs(ceil(i / steps)).pose, handles.pcbs(ceil(i / steps)).pose - transl(0.7, 0, 0), 30);
+        if ceil(i / steps) < 2 animate_conveyor(handles.pcbs(2), handles.pcbs(2).pose, handles.pcbs(2).pose - transl(0, 0.3, 0), 30); end
+        if ceil(i / steps) < 3 animate_conveyor(handles.pcbs(3), handles.pcbs(3).pose, handles.pcbs(3).pose - transl(0, 0.3, 0), 30); end
+    end
 
 
 % 
@@ -526,19 +597,33 @@ if handles.estop.Value == 1
     set(handles.stoptext, 'Visible','on');
     set(handles.stoptext, 'BackgroundColor','red');
     disp('EStop engaged')
+    pt = 1;
     while 1
         disp('awaiting input . . .');
-        if handles.cont.Value == 0, handles.estop.Value = 0; break; 
-        else, pause(0.5); continue; end
+        if handles.cont.Value == 0, handles.estop.Value = 0; break;
+        else, pause(2 * pt); pt = pt + 1; continue; end
     end
 
 end
+
 if handles.estop.Value == 0
     set(handles.stoptext, 'Visible','off');
 end
 
 guidata(hObject, handles);
 
+
+% --- Executes on button press in estop.
+function exit_Callback(hObject, eventdata, handles)
+
+if handles.exitbutton.Value == 1
+    handles.exitbutton.UserData = 1;
+    disp('Exiting GUI')
+    handles.exitbutton.Value = 0;
+    guidata(hObject, handles);
+    if handles.simstarter.UserData == 0, closereq(); end
+    try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
+end
 
 
 
