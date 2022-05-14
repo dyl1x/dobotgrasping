@@ -345,10 +345,10 @@ load('../scene_detector.mat');
 load('../shape_detector.mat');
 %%
 color_limit = 1.2; % 1.1 - 1.5
-n = 1; % num features in img
+n = 3; % num features in img
 
 % camera translation
-camera_offset =  [0.6550   -0.0000    0.0840];
+camera_offset =  [0.7340   -0.0270    0.0720];
 cam_rot = deg2rad(0); % x rot if cam facing down toward surface
 
 % Show RGB Image
@@ -421,6 +421,8 @@ for i=1:n
     [dest_, ncol] = colour_shape_dest(objects, i, ncol, true);
     dest(:, :, i) = dest_;
 end
+
+%%
 
 q0 = zeros(1, 4); % Dobot has 4 joints
 
@@ -515,8 +517,8 @@ for i=1:wc(3)
     
     % phome
     target_ee_msg.Position.X = 0.17;
-    target_ee_msg.Position.Y = 0;
-    target_ee_msg.Position.Z = 0;
+    target_ee_msg.Position.Y = -0.15;
+    target_ee_msg.Position.Z = 0.2;
     
     qua = eul2quat(zeros(1, 3));
     target_ee_msg.Orientation.W = qua(1);

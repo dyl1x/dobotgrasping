@@ -597,11 +597,11 @@ if handles.estop.Value == 1
     set(handles.stoptext, 'Visible','on');
     set(handles.stoptext, 'BackgroundColor','red');
     disp('EStop engaged')
-    pt = 1;
+    pt = 0.5;
     while 1
         disp('awaiting input . . .');
         if handles.cont.Value == 0, handles.estop.Value = 0; break;
-        else, pause(2 * pt); pt = pt + 1; continue; end
+        else, pause(pt); continue; end
     end
 
 end
@@ -619,6 +619,13 @@ function exit_Callback(hObject, eventdata, handles)
 if handles.exitbutton.Value == 1
     handles.exitbutton.UserData = 1;
     disp('Exiting GUI')
+    try
+        stop(handles.timer);
+        delete(timerfindall)
+    catch me
+        disp(me);
+    end
+    
     handles.exitbutton.Value = 0;
     guidata(hObject, handles);
     if handles.simstarter.UserData == 0, closereq(); end
@@ -635,27 +642,41 @@ end
 % --- Executes on button press in connect_b.
 function connect_b_Callback(hObject, eventdata, handles)
 
-path = get(hObject,'String');
-s = serialport(path,9600);
-handles.s = s;
+path = get(handles.path,'String');
+
+try
+    s = serialport(path,9600); % connect to hardware through serial
+    handles.s = s;
+    handles.timer = timer('ExecutionMode', 'fixedRate', 'Period', 1,'TimerFcn', {@checkhardwarestop,hObject,handles});
+    handles.timer.start;
+catch me
+    disp(me);
+end
 guidata(hObject,handles);
 
 
-function checkhardwarestop(hObject,handles)
+
+
+
+function checkhardwarestop(~,~,hObject,handles)
 % polls serial port to see the state of the estop
-flush(s);
-data = read(s,1,"char");
+flush(handles.s);
+data = read(handles.s,1,"char");
 % arduino code send 1 if estop is on and 0 if estop is turned off
 % update the variables
+eventdata = 0;
 if data == "1"
-    handles.cont = 0;
-    handles.state = 1;
-    set(handles.stoptext, 'Visible','on');
-    set(handles.stoptext, 'BackgroundColor','red');
+    handles.estop.Value = 1;
+%     set(handles.stoptext, 'Visible','on');
+%     set(handles.stoptext, 'BackgroundColor','red');
+    guidata(hObject,handles);
+    estop_Callback(hObject, eventdata, handles);
 end
 if data == "0"
-    handles.state = 0;
-    set(handles.stoptext, 'BackgroundColor','green');
+    handles.estop.Value = 0;
+%     set(handles.stoptext, 'BackgroundColor','green');
+    guidata(hObject,handles);
+    estop_Callback(hObject, eventdata, handles);
 end
 
 guidata(hObject,handles);

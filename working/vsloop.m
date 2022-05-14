@@ -22,6 +22,7 @@ while true
     
     % compute image plane error as a column
     e = pStar-uv;   % feature error
+    %e = uv-pStar;
     e = e(:);
     Zest = [];
     
@@ -40,7 +41,7 @@ while true
     try
         v = lambda * pinv(J) * e;
     catch
-        status = -1;
+        disp('v error');
         return
     end
     %fprintf('v: %.3f %.3f %.3f %.3f %.3f %.3f\n', v);
@@ -64,12 +65,14 @@ while true
     
     %Update joints
     q = q0 + (1/fps)*qp;
-    r.model.animate(q');
+    qr = q';
+    qr(1,4) = constrain_joint4(qr(1,2),qr(1,3));
+    r.model.animate(qr);
     
     %Get camera location
     Tc = r.model.fkine(r.model.getpos);
-    cam.T = Tc;
-    
+    %cam.T = Tc*transl(0,0,0.115) * trotx(pi)*troty(pi/2);
+    cam.T = Tc*tortx(pi);
     drawnow
     
     pause(1/fps)
@@ -79,7 +82,7 @@ while true
     end
     
     %update current joint position
-    q0 = q;
+    q0 = qr';
 end %loop finishes
 disp('vs loop is done');
 

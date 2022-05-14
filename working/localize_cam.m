@@ -22,7 +22,7 @@ targetEndEffectorMsg.Orientation.Z = qua(4);
 
 send(targetEndEffectorPub,targetEndEffectorMsg);
 
-keyboard
+%keyboard
 %%
 
 % Turn on the tool
