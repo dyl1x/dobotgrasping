@@ -12,6 +12,7 @@
 % P - 3D world coordinated of the points being tracked 
 % r - robot object
 % q0 - transpose of starting pos of robot
+
 function vsloop(cam,depth,lambda,fps,pStar,P,r,q0)
 ksteps = 0;
 while true
@@ -21,8 +22,8 @@ while true
     uv = cam.plot(P);
     
     % compute image plane error as a column
-    e = pStar-uv;   % feature error
-    %e = uv-pStar;
+    %e = pStar-uv;   % feature error
+    e = uv-pStar;
     e = e(:);
     Zest = [];
     
@@ -72,7 +73,7 @@ while true
     %Get camera location
     Tc = r.model.fkine(r.model.getpos);
     %cam.T = Tc*transl(0,0,0.115) * trotx(pi)*troty(pi/2);
-    cam.T = Tc*tortx(pi);
+    cam.T = Tc*trotx(pi);
     drawnow
     
     pause(1/fps)

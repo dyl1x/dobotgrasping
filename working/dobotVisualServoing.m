@@ -12,38 +12,44 @@ cam = CentralCamera('focal', 0.08, 'pixel', 10e-5, ...
 'resolution', [1024 1024], 'centre', [512 512],'name', 'UR10camera');
 
 r.model.animate(q0);
-Tc0= r.model.fkine(q0);
+Tc0= r.model.fkine(q0)*trotx(pi);
 drawnow
 
-cam.T = Tc0 * trotx(pi);
+cam.T = Tc0;
 
 cam.plot_camera('Tcam',Tc0, 'label','scale',0.025);
 
 % goals
 % pStar = [662 362 362 662; 362 362 662 662];
 
-%pStar = [362 662 362 662; 362 362 662 662];
+% pStar = [362 662 362 662; 362 362 662 662];
 
-pStar = [412 612;512 512];
+pStar = [362 662;512 512];
 
 %%
 
-cent = transl(0.35,0,0.2) * troty(pi/2);
-% P = getP(cent,0.075);
+cent = transl(0.187,0,0);
+
+% P = getP(cent,0.075,4);
 % 
 % pl1 = plot_sphere(P(:,1), 0.01, 'b');
 % pl2 = plot_sphere(P(:,2), 0.01, 'b');
 % pl3 = plot_sphere(P(:,3), 0.01, 'b');
 % pl4 = plot_sphere(P(:,4), 0.01, 'b');
-P = [ 0.157    0.217;
-      0       0;
-      0    0];
-  
-pl1 = plot_sphere(P, 0.01, 'b');
-%ps = [pl1,pl2,pl3,pl4];
+
+% P = [ 0.157    0.217;
+%       0         0;
+%       0         0];
+
+P = getP(cent,0.05,2);
+
+pl1 = plot_sphere(P(:,1), 0.01, 'b');
+pl2 = plot_sphere(P(:,2), 0.01, 'b');
+
 
 %% create the camera view
-
+q0 = r.model.getpos;
+Tc0 = r.model.fkine(q0) * trotx(pi);
 
 cam.clf()
 cam.plot(pStar, '*'); 
@@ -53,7 +59,7 @@ cam.plot(P, 'Tcam', Tc0, 'o')
 %d = 0.2130
 %%
 realDepth = getDist(cent,Tc0);
-vsloop(cam,realDepth,0.6,25,pStar,P,r,q0');
+vsloop(cam,realDepth,0.2,25,pStar,P,r,q0');
 
 %%
 
