@@ -48,3 +48,13 @@ The world coordinates of the payloads in the robot frame are then picked and pla
 ### Real Robot Control
 1. Connect Dobot and Intel Camera to local system
 2. Open `working/real_rob_control.m`, follow comments
+
+**Camera Localization**
+
+1. Open `working/localize_cam.m` and follow the comments
+2. Requires camera, Dobot, and a object (eg: cube)
+
+![clg3.png](clg3.png)
+
+
+
