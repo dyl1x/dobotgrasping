@@ -97,7 +97,9 @@ guidata(hObject,data);
 function stuff_Callback(hObject, eventdata, handles)
 
 handles.h = 0.51;
-handles.pt = 0.01;
+handles.pt = 0.001;
+handles.tpt = 0.0001;
+handles.current_traces = [];
 
 ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 [q2_, q3_] = deal(deg2rad(35), deg2rad(105));
@@ -147,28 +149,78 @@ guidata(hObject,handles);
 %
 
 
-function animate_traj(handles, dest, model, obj, path, weight, plot, move_ply)
+function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot, move_ply)
     if ~exist('pt', 'var'), pt = handles.pt; end
 
     current_pose = model.fkine(model.getpos);
     q = model.getpos;
     [qmatrix, desired] = rmrc(current_pose, dest, q, model, false, path, weight);
     
-    if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
+    if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % pl
     for i=1:length(qmatrix)
-       model.animate(qmatrix(i, :));
-       ee = model.fkine(qmatrix(i, :));
+        model.animate(qmatrix(i, :));
+        ee = model.fkine(qmatrix(i, :));
+        if i == 1, prev_ee = [eye(3), ee(1:3, 4); zeros(1, 3), 1]; else, prev_ee = model.fkine(qmatrix(i-1, :)); end
 
-       if plot == true, plot3(ee(1, 4), ee(2, 4), ee(3, 4), 'b*'); end
-       if move_ply == true, obj.MoveMesh(ee); end
+        if plot == true, plot3(ee(1, 4), ee(2, 4), ee(3, 4), 'b*'); end
+        if move_ply == true, obj.MoveMesh(ee);
 
-       pause(pt);
-       if handles.exitbutton.UserData == 1, return; end
+            if ~isempty(handles.current_traces)
+                if i == 1
+                    obj_pos = ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+                        init_rot = ee(1:3, 1:3);
+
+                        x_ = handles.current_traces{j}.XData;
+                        y_ = handles.current_traces{j}.YData;
+                        z_ = handles.current_traces{j}.ZData;
+
+                        xyz_ = init_rot * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+
+                        handles.current_traces{j}.XData = obj_pos(1) + xyz_(1);
+                        handles.current_traces{j}.YData = obj_pos(2) + xyz_(2);
+                        handles.current_traces{j}.ZData = xyz_(3);
+
+                    end
+                elseif i == length(qmatrix)
+                    obj_pos = ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+
+                        x_ = handles.current_traces{j}.XData;
+                        y_ = handles.current_traces{j}.YData;
+                        z_ = handles.current_traces{j}.ZData;
+
+                        xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+
+                        handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
+                        handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
+                        handles.current_traces{j}.ZData = xyz_(3);
+                    end
+                else
+                    obj_pos = ee(1:3, 4);
+                    prev_pos = prev_ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+                        x_ = handles.current_traces{j}.XData;
+                        y_ = handles.current_traces{j}.YData;
+                        z_ = handles.current_traces{j}.ZData;
+                        rot = ee(1:3, 1:3);
+                        xyz_ = rot * [obj_pos(1) - prev_pos(1), obj_pos(2) - prev_pos(2), z_]';
+%                         disp(xyz_);
+                        handles.current_traces{j}.XData = x_ - xyz_(1);
+                        handles.current_traces{j}.YData = y_ - xyz_(2);
+                        handles.current_traces{j}.ZData = xyz_(3);
+                    end
+                end
+%                 pause(0.5);
+            end
+        end
+        pause(pt);
+        if handles.exitbutton.UserData == 1, return; end
     end
     if move_ply == true, obj.MoveMesh(dest); end
 
 
-function animate_dual_traj(handles, qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
+function [handles] = animate_dual_traj(handles, qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
     if ~exist('pt', 'var'), pt = handles.pt; end              % pause time
     if ~exist('mp', 'var'), mp = [false, false]; end    % are we moving ply for each model
     if ~exist('o', 'var'), o = [false, false]; end      % obj on end effector
@@ -205,7 +257,7 @@ function animate_dual_traj(handles, qm1, d1, m1, qm2, d2, m2, plot, o, p, w, mp)
     if mp(2) == true, o(2).MoveMesh(ds2); end
 
 
-function animate_conveyor(obj, start, finish, steps)
+function animate_conveyor(handles, obj, start, finish, steps)
     if ~exist('pt', 'var'), pt = 0.02; end
     start_pos = start(1:3, 4)';
     finish_pos = finish(1:3, 4)';
@@ -303,44 +355,44 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
     if plot == true, m1.plot3d(qm1(1, :)); end
 
 
-function trace_path(handles, obj, model, plot)
-    if ~exist('pt', 'var'), pt = handles.pt; end
+function [handles] = trace_path(handles, obj, model, plot)
+    if ~exist('pt', 'var'), pt = handles.tpt; end
 
     plt = [];
      if obj.type == 1
         
-        tfs = zeros(4, 4, 18);
-        tfs(:, :, 1) = transl(-0.01, 0.08, 0.005);
+        tfs = zeros(4, 4, 3);
+        tfs(:, :, 1) = transl(-0.05, -0.02, 0.005);
 
-        tfs(:, :, 2) = transl(0.035, 0, 0);
-        tfs(:, :, 3) = transl(-0.045, -0.02, 0);
-        tfs(:, :, 4) = transl(0, -0.02, 0);
-        tfs(:, :, 5) = transl(0.045, 0.02, 0);
-
-        tfs(:, :, 6) = transl(0, -0.02, 0);
-        tfs(:, :, 7) = transl(0, -0.02, 0);
-        tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
-
-        tfs(:, :, 9) = transl(0, -0.02, 0);
-        tfs(:, :, 10) = transl(0.035, 0.0175, 0);
+        tfs(:, :, 2) = transl(0.1, 0, 0);
+%         tfs(:, :, 3) = transl(-0.045, -0.02, 0);
+%         tfs(:, :, 4) = transl(0, -0.02, 0);
+%         tfs(:, :, 5) = transl(0.045, 0.02, 0);
+% 
+%         tfs(:, :, 6) = transl(0, -0.02, 0);
+%         tfs(:, :, 7) = transl(0, -0.02, 0);
+%         tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
+% 
+%         tfs(:, :, 9) = transl(0, -0.02, 0);
+%         tfs(:, :, 10) = transl(0.035, 0.0175, 0);
+%         
+%         tfs(:, :, 11) = transl(0.005, -0.02, 0);
+% 
+%         tfs(:, :, 12) = transl(-0.02, 0, 0);
+%         tfs(:, :, 13) = transl(0, -0.02, 0);
+%         tfs(:, :, 14) = transl(0.02, 0, 0);
+%         
+%         tfs(:, :, 15) = transl(0, -0.02, 0);
+%         tfs(:, :, 16) = transl(-0.025, 0, 0);
+%         tfs(:, :, 17) = transl(-0.025, 0.025, 0);
+%         tfs(:, :, 18) = transl(0, -0.05, 0);
+%         tfs(:, :, 19) = transl(0.045, 0, 0);
         
-        tfs(:, :, 11) = transl(0.005, -0.02, 0);
-
-        tfs(:, :, 12) = transl(-0.02, 0, 0);
-        tfs(:, :, 13) = transl(0, -0.02, 0);
-        tfs(:, :, 14) = transl(0.02, 0, 0);
-        
-        tfs(:, :, 15) = transl(0, -0.02, 0);
-        tfs(:, :, 16) = transl(-0.025, 0, 0);
-        tfs(:, :, 17) = transl(-0.025, 0.025, 0);
-        tfs(:, :, 18) = transl(0, -0.05, 0);
-        tfs(:, :, 19) = transl(0.045, 0, 0);
-        
-        tfs(:, :, 20) = transl(-0.1, -0.1, 0);
-        
-        for i=1:length(tfs)
+        tfs(:, :, 3) = transl(-0.1, -0.1, 0);
+        l = size(tfs);
+        for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 || i == 6 || i == 9 || i == 11 || i == 15 || i == 20
+            if i == 1 || i == 3
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
@@ -382,7 +434,8 @@ function trace_path(handles, obj, model, plot)
         
         tfs(:, :, 20) = transl(-0.15, -0.15, 0);
         
-        for i=1:length(tfs)
+        l = size(tfs);
+        for i=1:l(3)
             cp = model.fkine(model.getpos);
             if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16 || i == 20
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
@@ -415,7 +468,8 @@ function trace_path(handles, obj, model, plot)
         tfs(:, :, 10) = transl(0, -0.04, 0);
         tfs(:, :, 11) = transl(-0.25, -0.15, 0);
         
-        for i=1:length(tfs)
+        l = size(tfs);
+        for i=1:l(3)
             cp = model.fkine(model.getpos);
             if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10 || i == 11
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
@@ -444,7 +498,8 @@ function trace_path(handles, obj, model, plot)
 %      pause(6);
 %      keyboard;
 
-     for i=1:length(plt), delete(plt{i}); end
+    handles.current_traces = plt;
+%      for i=1:length(plt), delete(plt{i}); end
  
 
 function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
@@ -495,7 +550,8 @@ while (1)
     if mod(i, steps * l) == 0
         l = l + 1;
     else
-        sequences(i, steps, handles);
+        handles = sequences(i, steps, handles);
+        guidata(hObject, handles);
         i = i + 1;
     end
 
@@ -509,9 +565,9 @@ end
 
 
 
-function sequences(i, steps, handles)
+function [handles] = sequences(i, steps, handles)
     % workspace origin (where transporter and laser could collide)
-    ws_origin = transl(-0.03, -0.42, handles.h) * trotz(pi/2);
+    ws_origin = transl(-0.03, -0.42, handles.h);
     
     % transporter stow pos when laser operating
     stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
@@ -524,11 +580,11 @@ function sequences(i, steps, handles)
         disp(strcat(['PCB: ', num2str(ceil(i/steps))]));
 
         disp('a. SEQ -- Move R1 from q0 to pcb')
-        animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, false, 1, 0, false, false);
+        handles = animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, false, 1, 0, false, false);
 
     elseif mod(i, steps) == 2
         disp('b. SEQ -- Move R1 to ws origin')
-        animate_traj(handles, ws_origin, handles.r1.model, handles.pcbs(ceil(i / steps)), 5, -0.1, false, true)
+        handles = animate_traj(handles, ws_origin, handles.r1.model, handles.pcbs(ceil(i / steps)), 5, -0.1, false, true);
 
 %     disp('c. SEQ -- Move R1 to stow away pose for laser operation')
 %     animate_traj(handles, stow_away, handles.r1.model, false, 1, false, false, false)
@@ -538,28 +594,28 @@ function sequences(i, steps, handles)
 
     elseif mod(i, steps) == 3
         disp('c. & d. DUAL - Move R1 to stow away pose for laser operation & Move R2 to ws origin')
-        animate_dual_traj(handles, handles.r1.model.getpos, stow_away, handles.r1.model, handles.r2.model.getpos, ws_origin, handles.r2.model, false);
+        handles = animate_dual_traj(handles, handles.r1.model.getpos, stow_away, handles.r1.model, handles.r2.model.getpos, ws_origin, handles.r2.model, false);
 
     elseif mod(i, steps) == 4
         % Insert trace paths here
-        trace_path(handles, handles.pcbs(ceil(i / steps)), handles.r2.model, true)
+        handles = trace_path(handles, handles.pcbs(ceil(i / steps)), handles.r2.model, true);
 
     elseif mod(i, steps) == 5
         disp('f. Move R2 to q0')
-        animate_traj(handles, handles.r2.model.fkine(handles.q0), handles.r2.model, false, 1, false, false, false)
+        handles = animate_traj(handles, handles.r2.model.fkine(handles.q0), handles.r2.model, false, 1, false, false, false);
         handles.r2.model.animate(handles.q0);
 
     elseif mod(i, steps) == 6
         disp('g. Move R1 from stow away to pcb1')
-        animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, false)
+        handles = animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, false);
 
     elseif mod(i, steps) == 7
         disp('h. Move R1 from ws origin to conveyor out with pcb1')
-        animate_traj(handles, conv_out, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, true)
+        handles = animate_traj(handles, conv_out, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, true);
 
     elseif mod(i, steps) == 8
         disp('i. Move R1 from conveyor out to q0')
-        animate_traj(handles, handles.r1.model.fkine(handles.q0), handles.r1.model, false, 5, -0.2, false, false)
+        handles = animate_traj(handles, handles.r1.model.fkine(handles.q0), handles.r1.model, false, 5, -0.2, false, false);
 
     elseif mod(i, steps) == 0
         % 8a. Animate Conveyor
@@ -839,16 +895,16 @@ function update_strings(hObject,handles)
 % function updates the all the strings on the jogging UI
 q = handles.robot.model.getpos;
 
-set(handles.text3, 'String',q(1,1));
-set(handles.text4, 'String',q(1,2));
-set(handles.text5, 'String',q(1,3));
-set(handles.text6, 'String',q(1,5));
+set(handles.text3, 'String', num2str(q(1,1), 3));
+set(handles.text4, 'String', num2str(q(1,2), 3));
+set(handles.text5, 'String', num2str(q(1,3), 3));
+set(handles.text6, 'String', num2str(q(1,5), 3));
 
 tr = handles.robot.model.fkine(q);
 
-set(handles.text7, 'String',tr(1,4));
-set(handles.text8, 'String',tr(2,4));
-set(handles.text9, 'String',tr(3,4));
+set(handles.text7, 'String', num2str(tr(1,4), 3));
+set(handles.text8, 'String', num2str(tr(2,4), 3));
+set(handles.text9, 'String', num2str(tr(3,4), 3));
 
 guidata(hObject,handles);
 
