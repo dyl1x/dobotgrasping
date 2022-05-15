@@ -28,12 +28,12 @@ pStar = [362 662;512 512];
 
 
 
-cent = transl(0.187,0,0);
+cent = transl(0.19,0,0.05) * trotz(0.1);
 
 hold on
  target = Target(cent);
 P = getP(cent,0.05,2);
-%%
+%
 % P = getP(cent,0.075,4);
 % 
 % pl1 = plot_sphere(P(:,1), 0.01, 'b');
@@ -44,16 +44,16 @@ P = getP(cent,0.05,2);
 % P = [ 0.157    0.217;
 %       0         0;
 %       0         0];
-
-P = getP(cent,0.05,2);
-
-pl1 = plot_sphere(P(:,1), 0.01, 'b');
-pl2 = plot_sphere(P(:,2), 0.01, 'b');
-
-
+% 
+% P = getP(cent,0.05,2);
+% 
+% pl1 = plot_sphere(P(:,1), 0.01, 'b');
+% pl2 = plot_sphere(P(:,2), 0.01, 'b');
 
 
-%% create the camera view
+
+
+% create the camera view
 q0 = r.model.getpos;
 Tc0 = r.model.fkine(q0) * trotx(pi);
 
@@ -64,8 +64,9 @@ cam.plot(P(:,1), 'Tcam', Tc0, 'o')
 cam.plot(P(:,2), 'Tcam', Tc0, 'x')
 %d = 0.2130
 %%
+% realDepth = [getDist(cent,Tc0);getDist(cent,Tc0)];
 realDepth = getDist(cent,Tc0);
-vsloop(cam,realDepth,0.2,25,pStar,P,r,q0');
+vsloop(cam,realDepth,0.6,25,pStar,P,r,q0');
 
 %%
 

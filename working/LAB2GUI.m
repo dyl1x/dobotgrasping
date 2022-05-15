@@ -632,8 +632,27 @@ if handles.exitbutton.Value == 1
     try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
 end
 
-
-
+% --- Executes on button press in exitbutton.
+function exitbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to exitbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if handles.exitbutton.Value == 1
+    handles.exitbutton.UserData = 1;
+    disp('Exiting GUI')
+    try
+        stop(handles.timer);
+        delete(timerfindall)
+    catch me
+        disp(me);
+    end
+    
+    handles.exitbutton.Value = 0;
+    guidata(hObject, handles);
+    if handles.simstarter.UserData == 0, closereq(); end
+    try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
+end
+    
 %
 % 6. Hardware Estop
 %
@@ -894,19 +913,20 @@ guidata(hObject,handles);
 % --- Executes on button press in checkbox1.
 function checkbox1_Callback(hObject, eventdata, handles)
 value = get(hObject,'Value');
-disp(value)
 if value == 1
-    set(handles.vspannel, 'Visible', 'on');
-    
-    handles.centr = transl(-0.1, 0, 0.49);
-    handles.P = getP(handles.centr,0.05,2);
-    hold on
-    handles.target = Target(handles.centr);
-    updatevsstrings(hObject, eventdata,handles)
-    
+        
     if isfield(handles,'r1')
+        set(handles.vspannel, 'Visible', 'on');
+        
+        handles.centr = transl(-0.1, 0, 0.49);
+        handles.vsrot = [0,0,0];
+        handles.P = getP(handles.centr,0.05,2);
+        hold on
+        handles.target = Target(handles.centr);
+        updatevsstrings(hObject, eventdata,handles)
+    
         handles.cam = CentralCamera('focal', 0.08, 'pixel', 10e-5, ...
-            'resolution', [1024 1024], 'centre', [512 512],'name', 'UR10camera');
+            'resolution', [1024 1024], 'centre', [512 512],'name', 'docam');
         Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
         handles.cam.plot_camera('Tcam',Tc0, 'label','scale',0.025);
         
@@ -926,6 +946,7 @@ end
 
 guidata(hObject,handles);
 
+% updates the camera image figure
 function updatecamfeed(hObject, eventdata, handles)
 
 Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
@@ -934,6 +955,35 @@ handles.cam.plot(handles.pStar, '*');
 handles.cam.hold(true);
 handles.cam.plot(handles.P(:,1), 'Tcam', Tc0, 'o')
 handles.cam.plot(handles.P(:,2), 'Tcam', Tc0, 'x')
+
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsstart.
+function vsstart_Callback(hObject, eventdata, handles)
+value = get(hObject,'Value');
+
+while value == 1
+    Tc0 = handles.r1.model.fkine(handles.r1.model.getpos) * trotx(pi);
+    q0 = handles.r1.model.getpos;
+    
+    p = handles.cam.plot(handles.P,'Tcam',Tc0);
+    if ~(length(handles.pStar) > length(p)) %if we can see all the points in camera view
+        realDepth = getDist(handles.target.pose,Tc0)
+        if (realDepth < 0.1503)
+            % perform movement.
+            disp('vsloop');
+            vsloop(handles.cam,realDepth,0.2,25,handles.pStar,handles.P,handles.r1,q0');
+        else
+            disp('safe');
+        end
+    else
+        disp('cant see symbol');
+    end
+    
+    value = get(hObject,'Value');
+end
+
 
 
 guidata(hObject,handles);
@@ -1019,11 +1069,15 @@ guidata(hObject,handles);
 % --- Executes on button press in vsminusroll.
 function vsminusroll_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * trotx(-0.1);
+pose = pose * trotx(-0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,1);
+value = value -0.1;
+handles.vsrot(1,1) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1035,11 +1089,15 @@ function vsminuspitch_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 pose = handles.target.pose;
-pose = pose * troty(-0.1);
+pose = pose * troty(-0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,2);
+value = value -0.1;
+handles.vsrot(1,2) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1051,11 +1109,15 @@ function vsminusyaw_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 pose = handles.target.pose;
-pose = pose * trotz(-0.1);
+pose = pose * trotz(-0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,3);
+value = value -0.1;
+handles.vsrot(1,3) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1067,11 +1129,15 @@ function vsplusroll_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 pose = handles.target.pose;
-pose = pose * trotx(0.1);
+pose = pose * trotx(0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,1);
+value = value +0.1;
+handles.vsrot(1,1) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1082,11 +1148,15 @@ function vspluspitch_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 pose = handles.target.pose;
-pose = pose * troty(0.1);
+pose = pose * troty(0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,2);
+value = value +0.1;
+handles.vsrot(1,2) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1097,11 +1167,15 @@ function vsplusyaw_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 pose = handles.target.pose;
-pose = pose * trotz(0.1);
+pose = pose * trotz(0.174533);
 handles.target.MoveMesh(pose);
 
 handles.P = getP(pose,0.05,2); % get the points after moving target
 updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,3);
+value = value +0.1;
+handles.vsrot(1,3) = value;
 
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
@@ -1113,8 +1187,22 @@ set(handles.vsx, 'String',tr(1,4));
 set(handles.vsy, 'String',tr(2,4));
 set(handles.vsz, 'String',tr(3,4));
 
+value = handles.vsrot;
+set(handles.vsroll, 'String',value(1,1));
+set(handles.vspitch, 'String',value(1,2));
+set(handles.vsyaw, 'String',value(1,3));
+
 guidata(hObject,handles);
 
 
 
 
+
+
+function path_Callback(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of path as text
+%        str2double(get(hObject,'String')) returns contents of path as a double
