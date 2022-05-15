@@ -1,10 +1,20 @@
+% this script doesnt localize the camera with 100% accuracy.
+% the x and z values are reliables but the y values are very reliable.
+
+% Insctructions:
+% the sample_localize bag can be used as an example.
+% otherwise, a known object will need to be attached to the end effector
+% and then running the following script will output the offset values for
+% the camera to be used with the main_SNC script.
+
 set(0, 'DefaultFigureWindowStyle', 'docked')
 load('../scene_detector.mat');
 load('../shape_detector.mat');
 rosinit;
 
 %% manual setup for calibration
-%set end effector to position
+
+%set end effector to position to known position
 endEffectorPosition = [0.2,0,0]; % home
 endEffectorRotation = [0,0,0]; % home
 
@@ -25,13 +35,13 @@ send(targetEndEffectorPub,targetEndEffectorMsg);
 keyboard
 %%
 
-% Turn on the tool
+% Turn on the tool and attach the object
 [toolStatePub, toolStateMsg] = rospublisher('/dobot_magician/target_tool_state');
 toolStateMsg.Data = [0]; % Send 1 for on and 0 for off 
 send(toolStatePub,toolStateMsg);
 
 %% ESTOP
-
+%for safety, run this in case of an emergency
 [safetyStatePublisher,safetyStateMsg] = rospublisher('/dobot_magician/target_safety_status');
 safetyStateMsg.Data = 3;
 send(safetyStatePublisher,safetyStateMsg);
@@ -96,7 +106,7 @@ for i=1:n
 end
 
 %% calculate offset
-eePos = [0.2,0,0];
+eePos = endEffectorPosition;
 guess = world_coords(:,:,1);
 camera_offset = eePos - guess;
 disp(camera_offset)
