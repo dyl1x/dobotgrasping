@@ -48,3 +48,4 @@ The world coordinates of the payloads in the robot frame are then picked and pla
 ### Real Robot Control
 1. Connect Dobot and Intel Camera to local system
 2. Open `working/real_rob_control.m`, follow comments
+

@@ -1,11 +1,18 @@
 
+
+
+
 % IMG Processing from Intel Camera for Dobot Grasping
+
+
+
 
 % 1. COMBINE NETWORKS AND ROSBAGS : generate world coords of shapes from alignDepth topic
 % 2. CREATE/TEST LOOKUP NETWORK : To classify objects to coloured shapes, using pretrained Googlenet Model
 % 3. SCENE LABELER : Import JPEG images, convert to .mat for image labeller
-% 4. CREATE/TEST SCENE NETWORK : To locate and draw bounding boxes around objects in img
-% 5. SIFT SURF Feature Detection
+% 4. CREATE/TEST SCENE NETORK : To locate and draw bounding boxes around objects in img
+% 5. CREATE/TEST SHAPE NETWORK : To classify bounding box with shape ground truth
+% 6. SIFT SURF Feature Detection
 
 
 set(0, 'DefaultFigureWindowStyle', 'docked');
@@ -170,7 +177,7 @@ save("trained_network_1.mat");
 % First load in scene_dataset into ImageLabeler
 
 loadin = false;
-skip = false; % set to true for training network (post labelling)
+skip = true; % set to true for training network (post labelling)
 
 
 scene_dataset = imageDatastore('working/images/scene_dataset');
@@ -257,7 +264,8 @@ if TrainNet == true
         'MaxEpochs', 5, ...
         'InitialLearnRate', 3e-6, ...
         'Shuffle', 'every-epoch', ...
-        'Verbose', true); % 'Plots', 'training-progress'
+        'Plots', 'training-progress', ...
+        'Verbose', true); % 
 
     [scene_detector, scene_info] = trainRCNNObjectDetector(custom_sceneTable, layers, options);
     save('scene_detector.mat')
@@ -273,7 +281,59 @@ img = imread('working/images/scene_dataset/IMG_11.jpeg');
 [bbox, scores, labels] = test_scene_net(scene_detector, img, 7);
 
 
-%% 5. SIFT SURF Feature Detection : Object Detection in a Cluttered Scene using point feature matching
+
+%% 5. Shape Detector : GoogleNet Model
+
+clear
+clc
+
+Dataset = imageDatastore('working/images/shape_dataset','IncludeSubfolders',true,'LabelSource','foldernames');
+[train, valid] = splitEachLabel(Dataset, 0.7);
+
+net = googlenet;
+% analyzeNetwork(net) % uncomment to view model architecture
+
+input_layer_size = net.Layers(1).InputSize(1:2);
+resized_train_imgs = augmentedImageDatastore(input_layer_size, train);
+resized_valid_imgs = augmentedImageDatastore(input_layer_size, valid);
+
+feature_learner = net.Layers(142);
+output_classifier = net.Layers(144);
+
+num_classes = numel(categories(train.Labels));
+
+new_feature_learner = fullyConnectedLayer(num_classes, ...
+    "Name",  'Shape Features', ...
+    "WeightLearnRateFactor", 10, ...
+    "BiasLearnRateFactor", 10);
+
+new_classifier_layer = classificationLayer('Name', 'Shape Classifier');
+
+layer_graph = layerGraph(net);
+new_layer_graph = replaceLayer(layer_graph, feature_learner.Name, new_feature_learner);
+new_layer_graph = replaceLayer(new_layer_graph, output_classifier.Name, new_classifier_layer);
+
+
+minibatchsize = 5;
+valid_freq = floor(numel(resized_train_imgs.Files)/minibatchsize);
+train_options = trainingOptions('sgdm', ...
+    'MiniBatchSize', minibatchsize, ...
+    'MaxEpochs', 6, ...
+    'InitialLearnRate', 3e-4, ...
+    'Shuffle', 'every-epoch', ...
+    'ValidationData', resized_valid_imgs, ...
+    'ValidationFrequency', valid_freq, ...
+    'Verbose', true, ...
+    'Plots', 'training-progress');
+
+net = trainNetwork(resized_train_imgs, new_layer_graph, train_options);
+save("sceneDetectorNetwork.mat");
+
+% accepts image and plots result on figure
+% test_scene_net(net, 'working/images/lookup/green_cube.jpeg')
+
+
+%% 6. SIFT SURF Feature Detection : Object Detection in a Cluttered Scene using point feature matching
 
 clc
 clear all

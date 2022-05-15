@@ -27,7 +27,8 @@ figure(1)
 i = readImage(sub.receive);
 imshow(i)
 
-% imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.jpeg']);
+% imwrite(i, ['working/images/scene_dataset/IMG_', num2str(idx), '.g boxes around objects in img
+% 5. CREATE/TEST SHAPE NETjpeg']);
 % idx = idx + 1;
 
 %% 2. ROS BAGS : Load Scene & Shape Detectors
@@ -36,25 +37,24 @@ load('scene_detector.mat')
 load('shape_detector.mat')
 
 %% 2. 1 Animate Dobot in Simulation from ROS BAG
-% close all
-% clc
 
-color_limit = 1.3;
-steps = 50; % trajectories
-n = 3; % num features in img
+close all
+color_limit = 1.2;
+steps = 50;
 
-% filename = 'local3'; % n = 3
-filename = 'RealRobotTest1'; % n = 5
-% filename = 'AllShapesTest'; % n = 12
-% filename = '3ObjAlignDepth'; % n = 3
-% filename = 'CubesPyramidTest1'; % n = 6
-% filename = 'CubesPyramidTest2'; % n = 6
+% filename = 'ThreeSphereTest'; n = 3; x_ = 0.8; rz = 0;
+% filename = 'ThreeSphereThreeCubeTest'; n = 6; x_ = 0.8; rz = 0;
+% filename = 'RealRobotTest1'; n = 3; x_ = 0.6; rz = -8;
+% filename = 'RealRobotTest2'; n = 5; x_ = 0.6; rz = -8;
+% filename = 'May6RealDemo2'; n = 3; x_ = 0.62; rz = -2;
+filename = 'CubesPyramidTest1'; n = 6; x_ = 0.8; rz = 0;
+% filename = 'CubesPyramidTest2'; n = 6; x_ = 0.8; rz = 0;
 
 bag = rosbag(strcat(['bag/', filename, '.bag']));
 
 % camera transform
-camera_offset =  [0.6, 0, 0.1];
-cam_rot = deg2rad(-8); % x rot if cam facing down toward surface
+camera_offset =  [x_, 0, 0.1];
+cam_rot = deg2rad(rz); % x rot if cam facing down toward surface
 
 % Get RGB Image
 RGB_data = select(bag, 'Topic', '/camera/color/image_raw');
@@ -80,9 +80,7 @@ intrinsic_matrix = infoMsg{1}.K;
 
 % Detect boxes
 [bbox, score_idx, bbox_idx, scores, labels, annot_color_img, img_cuts, n] = return_boxes(scene_detector, color_img, aligned_img, n, color_limit);
-
 [shape_array, annot_color_img] = calc_camera_coords(bbox, bbox_idx, aligned_img, annot_color_img, intrinsic_matrix, n);
-
 imshow(annot_color_img) % annotated rgb image with bounding boxes and centre x's
 
 % classify shapes in boxes
@@ -134,7 +132,7 @@ ncol = [1 1 1];
 for i=1:n
     obj = [eye(3), world_transforms(1:3, 4, i); zeros(1, 3), 1];
     
-    [dest, ncol] = colour_shape_dest(objects, i, ncol);
+    [dest, ncol] = colour_shape_dest(objects, i, ncol, false);
     
     q1 = dobot.model.ikcon(obj, q0);
     

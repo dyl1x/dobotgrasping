@@ -30,22 +30,22 @@ while l < n
     h = bbox(4);
 
     if x > img_size(2)
-        disp('out of bounds x: ', num2str(x))
+        disp(strcat('out of bounds x: ', num2str(x)))
         i = i + 1;
     elseif x + w - 1 > img_size(2)
-        disp('out of bounds x+w: ', num2str(x+w-1))
+        disp(strcat('out of bounds x+w: ', num2str(x+w-1)))
         i = i + 1;
     elseif y > img_size(1)
-        disp('out of bounds y: ', num2str(y))
+        disp(strcat('out of bounds y: ', num2str(y)))
         i = i + 1;
     elseif y + h - 1 > img_size(1)
-        disp('out of bounds yh: ', num2str(y+h-1))
+        disp(strcat('out of bounds yh: ', num2str(y+h-1)))
         i = i + 1;
     elseif y <= 0
-        disp('out of bounds y <= 0')
+        disp(strcat('out of bounds y <= 0'))
         i = i + 1;
     elseif x <= 0
-        disp('out of bounds x <= 0')
+        disp(strcat('out of bounds x <= 0'))
         i = i + 1;
     else
         try 
