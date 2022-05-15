@@ -682,7 +682,13 @@ end
 guidata(hObject,handles);
 
 
-
+% --- Executes during object creation, after setting all properties.
+function path_CreateFcn(hObject, eventdata, handles)
+% Hint: edit conr2.model.base + transl(-0.3, -0.05, 0)trols usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 %
 % 7. Teach Buttons
@@ -881,13 +887,7 @@ guidata(hObject,handles);
 %
 
 
-% --- Executes during object creation, after setting all properties.
-function path_CreateFcn(hObject, eventdata, handles)
-% Hint: edit conr2.model.base + transl(-0.3, -0.05, 0)trols usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+
 
 
 % --- Executes on button press in checkbox1.
@@ -897,85 +897,81 @@ disp(value)
 if value == 1
     set(handles.vspannel, 'Visible', 'on');
     
-    handles.centr = transl(0,0,0)* troty(pi/2);
-    handles.P = getP(handles.centr,0.025);
-    drawpoints(hObject,handles);
+    handles.centr = transl(-0.1, 0, 0.49);
+    handles.P = getP(handles.centr,0.05,2);
+    hold on
+    handles.target = Target(handles.centr);
+    updatevsstrings(hObject, eventdata,handles)
 else
     set(handles.vspannel, 'Visible', 'off');
+    if isfield(handles,'target')
+        handles.target.DeleteMesh;
+    end
 end
-data = guidata(hObject)
+
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusx.
 function vsminusx_Callback(hObject, eventdata, handles)
-handles.centr = transl(-0.01,0,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(-0.1,0,0);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusy.
 function vsminusy_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,-0.01,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,-0.1,0);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusz.
 function vsminusz_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0,-0.01) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0,-0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusx.
 function vsplusx_Callback(hObject, eventdata, handles)
-handles.centr = transl(0.01,0,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0.1,0,0);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusy.
 function vsplusy_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0.01,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0.1,0);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusz.
 function vsplusz_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0,0.01) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0,0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusroll.
 function vsminusroll_Callback(hObject, eventdata, handles)
-currentCent = handles.centr;
-rot = eye(4);
-rot(1:3,1:3) = handles.centr(1:3,1:3);
-currentCent = currentCent * inv(currentCent);
-currentCent = currentCent*rot*trotx(-0.1);
-currentCent(1:3,4) = handles.centr(1:3,4);
-
-
-handles.centr = currentCent;
-handles.P = getP(handles.centr,0.025);
-
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * trotx(-0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
@@ -984,6 +980,11 @@ function vsminuspitch_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminuspitch (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * troty(-0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusyaw.
@@ -991,6 +992,11 @@ function vsminusyaw_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminusyaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * trotz(-0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusroll.
@@ -998,20 +1004,10 @@ function vsplusroll_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusroll (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-currentCent = handles.centr;
-rot = eye(4);
-rot(1:3,1:3) = handles.centr(1:3,1:3);
-currentCent = currentCent * inv(currentCent);
-currentCent = currentCent*rot*trotx(0.1);
-currentCent(1:3,4) = handles.centr(1:3,4);
-
-
-handles.centr = currentCent;
-handles.P = getP(handles.centr,0.025);
-
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
-
+pose = handles.target.pose;
+pose = pose * trotx(0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 % --- Executes on button press in vspluspitch.
@@ -1019,39 +1015,32 @@ function vspluspitch_Callback(hObject, eventdata, handles)
 % hObject    handle to vspluspitch (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+pose = handles.target.pose;
+pose = pose * troty(0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 % --- Executes on button press in vsplusyaw.
 function vsplusyaw_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusyaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * trotz(0.1);
+handles.target.MoveMesh(pose);
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 function updatevsstrings(hObject, eventdata,handles)
 % function updates the text labels for in the vspannel
-tr = handles.centr;
+tr = handles.target.pose;
 set(handles.vsx, 'String',tr(1,4));
 set(handles.vsy, 'String',tr(2,4));
 set(handles.vsz, 'String',tr(3,4));
 
 guidata(hObject,handles);
 
-function drawpoints(hObject,handles)
-% plots the tracking spheres
-P = handles.P;
-pl1 = plot_sphere(P(:,1), 0.025, 'b');
-pl2 = plot_sphere(P(:,2), 0.025, 'b');
-pl3 = plot_sphere(P(:,3), 0.025, 'b');
-pl4 = plot_sphere(P(:,4), 0.025, 'b');
 
-handles.surfs = pl1;
-data = guidata(hObject)
-guidata(hObject,handles);
-
-function deletepoints(hObject,handles)
-% deletes the plotted ones
-    % make a class for the points
-%     drawnow();
-guidata(hObject,handles);
 
 

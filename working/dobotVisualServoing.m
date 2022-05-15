@@ -26,10 +26,14 @@ cam.plot_camera('Tcam',Tc0, 'label','scale',0.025);
 
 pStar = [362 662;512 512];
 
-%%
+
 
 cent = transl(0.187,0,0);
 
+hold on
+ target = Target(cent);
+
+%%
 % P = getP(cent,0.075,4);
 % 
 % pl1 = plot_sphere(P(:,1), 0.01, 'b');
@@ -45,6 +49,8 @@ P = getP(cent,0.05,2);
 
 pl1 = plot_sphere(P(:,1), 0.01, 'b');
 pl2 = plot_sphere(P(:,2), 0.01, 'b');
+
+
 
 
 %% create the camera view

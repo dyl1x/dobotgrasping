@@ -24,7 +24,7 @@ set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
 %%
 clf
-mesh_h = PlaceObject('models/pcb3.ply');
+mesh_h = PlaceObject('models/target.ply');
 axis equal
 vertices = get(mesh_h,'Vertices');
 transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
