@@ -651,6 +651,7 @@ try
     handles.timer.start;
 catch me
     disp(me);
+    errordlg('Serial device could not be found in specified path','Serial Path Error');
 end
 guidata(hObject,handles);
 
@@ -902,6 +903,20 @@ if value == 1
     hold on
     handles.target = Target(handles.centr);
     updatevsstrings(hObject, eventdata,handles)
+    
+    if isfield(handles,'r1')
+        handles.cam = CentralCamera('focal', 0.08, 'pixel', 10e-5, ...
+            'resolution', [1024 1024], 'centre', [512 512],'name', 'UR10camera');
+        Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
+        handles.cam.plot_camera('Tcam',Tc0, 'label','scale',0.025);
+        
+        handles.pStar = [362 662;512 512];
+        handles.P = getP(handles.centr,0.05,2);
+        updatecamfeed(hObject, eventdata, handles);
+        
+    else
+        errordlg('Please load the map and assets first','Asset error');
+    end
 else
     set(handles.vspannel, 'Visible', 'off');
     if isfield(handles,'target')
@@ -911,12 +926,27 @@ end
 
 guidata(hObject,handles);
 
+function updatecamfeed(hObject, eventdata, handles)
+
+Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
+handles.cam.clf()
+handles.cam.plot(handles.pStar, '*'); 
+handles.cam.hold(true);
+handles.cam.plot(handles.P(:,1), 'Tcam', Tc0, 'o')
+handles.cam.plot(handles.P(:,2), 'Tcam', Tc0, 'x')
+
+
+guidata(hObject,handles);
 
 % --- Executes on button press in vsminusx.
 function vsminusx_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(-0.1,0,0);
+pose = pose * transl(-0.01,0,0);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -924,8 +954,12 @@ guidata(hObject,handles);
 % --- Executes on button press in vsminusy.
 function vsminusy_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(0,-0.1,0);
+pose = pose * transl(0,-0.01,0);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -933,8 +967,12 @@ guidata(hObject,handles);
 % --- Executes on button press in vsminusz.
 function vsminusz_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(0,0,-0.1);
+pose = pose * transl(0,0,-0.01);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -942,8 +980,12 @@ guidata(hObject,handles);
 % --- Executes on button press in vsplusx.
 function vsplusx_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(0.1,0,0);
+pose = pose * transl(0.01,0,0);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -951,8 +993,12 @@ guidata(hObject,handles);
 % --- Executes on button press in vsplusy.
 function vsplusy_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(0,0.1,0);
+pose = pose * transl(0,0.01,0);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -960,8 +1006,12 @@ guidata(hObject,handles);
 % --- Executes on button press in vsplusz.
 function vsplusz_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
-pose = pose * transl(0,0,0.1);
+pose = pose * transl(0,0,0.01);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -971,6 +1021,10 @@ function vsminusroll_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * trotx(-0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -983,6 +1037,10 @@ function vsminuspitch_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * troty(-0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -995,6 +1053,10 @@ function vsminusyaw_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * trotz(-0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -1007,6 +1069,10 @@ function vsplusroll_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * trotx(0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -1018,6 +1084,10 @@ function vspluspitch_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * troty(0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
@@ -1029,6 +1099,10 @@ function vsplusyaw_Callback(hObject, eventdata, handles)
 pose = handles.target.pose;
 pose = pose * trotz(0.1);
 handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
 updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 

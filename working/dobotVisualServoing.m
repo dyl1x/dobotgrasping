@@ -32,7 +32,7 @@ cent = transl(0.187,0,0);
 
 hold on
  target = Target(cent);
-
+P = getP(cent,0.05,2);
 %%
 % P = getP(cent,0.075,4);
 % 
@@ -60,8 +60,8 @@ Tc0 = r.model.fkine(q0) * trotx(pi);
 cam.clf()
 cam.plot(pStar, '*'); 
 cam.hold(true);
-cam.plot(P, 'Tcam', Tc0, 'o')
-
+cam.plot(P(:,1), 'Tcam', Tc0, 'o')
+cam.plot(P(:,2), 'Tcam', Tc0, 'x')
 %d = 0.2130
 %%
 realDepth = getDist(cent,Tc0);
