@@ -12,6 +12,7 @@
 % P - 3D world coordinated of the points being tracked 
 % r - robot object
 % q0 - transpose of starting pos of robot
+
 function vsloop(cam,depth,lambda,fps,pStar,P,r,q0)
 ksteps = 0;
 while true
@@ -21,17 +22,30 @@ while true
     uv = cam.plot(P);
     
     % compute image plane error as a column
-    e = pStar-uv;   % feature error
+    %e = pStar-uv;   % feature error
+    e = uv-pStar;
     e = e(:);
     Zest = [];
     
     % compute the Jacobian
+%     try
+%         Tc = r.model.fkine(r.model.getpos)*trotx(pi);
+%         point1 = eye(4);
+%         point1(1:3,4) = P(:,1);
+%         point2 = eye(4);
+%         point2(1:3,4) = P(:,2);
+%         depth = [getDist(point1,Tc);getDist(point2,Tc)];
+%     catch
+%         disp('no depth');
+%     end
+    
     if isempty(depth)
         % exact depth from simulation (not possible in practice)
         pt = homtrans(inv(Tcam), P);
         J = cam.visjac_p(uv, pt(3,:) );
     elseif ~isempty(Zest)
         J = cam.visjac_p(uv, Zest);
+        disp('used zest');
     else
         J = cam.visjac_p(uv, depth );
     end
@@ -40,10 +54,10 @@ while true
     try
         v = lambda * pinv(J) * e;
     catch
-        status = -1;
+        disp('v error');
         return
     end
-    %fprintf('v: %.3f %.3f %.3f %.3f %.3f %.3f\n', v);
+    
     
     %compute robot's Jacobian and inverse
     J2 = r.model.jacobn(q0);
@@ -64,22 +78,24 @@ while true
     
     %Update joints
     q = q0 + (1/fps)*qp;
-    r.model.animate(q');
+    qr = q';
+    qr(1,4) = constrain_joint4(qr(1,2),qr(1,3));
+    r.model.animate(qr);
     
     %Get camera location
     Tc = r.model.fkine(r.model.getpos);
-    cam.T = Tc;
-    
+    %cam.T = Tc*transl(0,0,0.115) * trotx(pi)*troty(pi/2);
+    cam.T = Tc*trotx(pi);
     drawnow
     
     pause(1/fps)
     
-    if ~isempty(200) && (ksteps > 200)
+    if ~isempty(100) && (ksteps > 100)
         break;
     end
     
     %update current joint position
-    q0 = q;
+    q0 = qr';
 end %loop finishes
 disp('vs loop is done');
 

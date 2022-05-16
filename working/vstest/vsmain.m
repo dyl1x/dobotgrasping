@@ -30,6 +30,8 @@ pl2 = plot_sphere(P(:,2), 0.025, 'b');
 pl3 = plot_sphere(P(:,3), 0.025, 'b');
 pl4 = plot_sphere(P(:,4), 0.025, 'b');
 
+ps = [pl1,pl2,pl3,pl4];
+
 %%
 
 cent =  cent * inv(cent);

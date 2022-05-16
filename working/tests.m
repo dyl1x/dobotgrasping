@@ -24,7 +24,7 @@ set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
 %%
 clf
-mesh_h = PlaceObject('models/pcb3.ply');
+mesh_h = PlaceObject('models/target.ply');
 axis equal
 vertices = get(mesh_h,'Vertices');
 transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0,0,0.01)';
@@ -38,9 +38,10 @@ qHome = [0,pi/2,-pi/2,0];
 rt1 = Dobot(ws,1, 2);
 
 %%
-q2 = deg2rad(20);
-q3 = deg2rad(-20);
-rt1.model.plot([0,q2,q3,q4(q2,q3),0]);
+q2 = deg2rad(0);
+q3 = deg2rad(90);
+rt1.model.animate([0,q2,q3,constrain_joint4(q2,q3),0]);
+
 
 %%
 

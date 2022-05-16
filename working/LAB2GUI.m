@@ -534,34 +534,39 @@ algebraicDist = ((points(:,1)-centerPoint(1))/radii(1)).^2 ...
 % --- Executes on button press in simstarter.
 function simstarter_Callback(hObject, eventdata, handles)
 
-handles.simstarter.UserData = 1;
-guidata(hObject, handles)
-i = 1;
-l = 1;
-
-while (1)
-
-    steps = 9;
-
-    if l > 3, break; end
-    if handles.exitbutton.UserData == 1, break; end
-
-
-    if mod(i, steps * l) == 0
-        l = l + 1;
-    else
-        handles = sequences(i, steps, handles);
-        guidata(hObject, handles);
-        i = i + 1;
+if isfield(handles,'r1')
+    handles.simstarter.UserData = 1;
+    guidata(hObject, handles)
+    i = 1;
+    l = 1;
+    
+    while (1)
+        
+        steps = 9;
+        
+        if l > 3, break; end
+        if handles.exitbutton.UserData == 1, break; end
+        
+        
+        if mod(i, steps * l) == 0
+            l = l + 1;
+        else
+            sequences(i, steps, handles);
+            i = i + 1;
+        end
     end
-
+    
+    if handles.exitbutton.UserData == 1
+        disp('Returning out of sim start')
+        closereq();
+        %     return;
+    end
+else
+    errordlg('Please load the map and assets first','Asset error');
 end
 
-if handles.exitbutton.UserData == 1
-    disp('Returning out of sim start')
-    closereq();
-%     return;
-end
+
+
 
 
 
@@ -653,11 +658,18 @@ if handles.estop.Value == 1
     set(handles.stoptext, 'Visible','on');
     set(handles.stoptext, 'BackgroundColor','red');
     disp('EStop engaged')
-    pt = 1;
+    pt = 0.5;
     while 1
         disp('awaiting input . . .');
+        
+        if isfield(handles,'s')
+            try
+                checkhardwarestop(hObject,handles);
+            catch me
+            end
+        end
         if handles.cont.Value == 0, handles.estop.Value = 0; break;
-        else, pause(2 * pt); pt = pt + 1; continue; end
+        else, pause(pt); continue; end
     end
 
 end
@@ -675,14 +687,46 @@ function exit_Callback(hObject, eventdata, handles)
 if handles.exitbutton.Value == 1
     handles.exitbutton.UserData = 1;
     disp('Exiting GUI')
+    try
+        stop(handles.timer);
+    catch me
+        disp(me);
+    end
+    try
+        delete(timerfindall)
+    catch me
+        disp(me);
+    end
     handles.exitbutton.Value = 0;
     guidata(hObject, handles);
     if handles.simstarter.UserData == 0, closereq(); end
     try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
 end
 
-
-
+% --- Executes on button press in exitbutton.
+function exitbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to exitbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if handles.exitbutton.Value == 1
+    handles.exitbutton.UserData = 1;
+    disp('Exiting GUI')
+    try
+        stop(handles.timer);
+    catch me
+        disp(me);
+    end
+    try
+        delete(timerfindall)
+    catch me
+        disp(me);
+    end
+    handles.exitbutton.Value = 0;
+    guidata(hObject, handles);
+    if handles.simstarter.UserData == 0, closereq(); end
+    try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
+end
+    
 %
 % 6. Hardware Estop
 %
@@ -691,33 +735,54 @@ end
 % --- Executes on button press in connect_b.
 function connect_b_Callback(hObject, eventdata, handles)
 
-path = get(hObject,'String');
-s = serialport(path,9600);
-handles.s = s;
+path = get(handles.path,'String');
+
+try
+    s = serialport(path,9600); % connect to hardware through serial
+    handles.s = s;
+    handles.timer = timer('ExecutionMode', 'fixedRate', 'Period', 0.5,'TimerFcn', {@checkhardwarestop,hObject,handles});
+    handles.timer.start;
+catch me
+    disp(me);
+    errordlg('Serial device could not be found in specified path','Serial Path Error');
+end
 guidata(hObject,handles);
 
 
-function checkhardwarestop(hObject,handles)
+
+
+
+function checkhardwarestop(~,~,hObject,handles)
 % polls serial port to see the state of the estop
-flush(s);
-data = read(s,1,"char");
+flush(handles.s);
+data = read(handles.s,1,"char")
 % arduino code send 1 if estop is on and 0 if estop is turned off
 % update the variables
+eventdata = 0;
 if data == "1"
-    handles.cont = 0;
-    handles.state = 1;
-    set(handles.stoptext, 'Visible','on');
-    set(handles.stoptext, 'BackgroundColor','red');
+    handles.estop.Value = 1;
+%     set(handles.stoptext, 'Visible','on');
+%     set(handles.stoptext, 'BackgroundColor','red');
+    guidata(hObject,handles);
+    estop_Callback(hObject, eventdata, handles);
 end
 if data == "0"
-    handles.state = 0;
-    set(handles.stoptext, 'BackgroundColor','green');
+    handles.estop.Value = 0;
+%     set(handles.stoptext, 'BackgroundColor','green');
+    guidata(hObject,handles);
+    estop_Callback(hObject, eventdata, handles);
 end
 
 guidata(hObject,handles);
 
 
-
+% --- Executes during object creation, after setting all properties.
+function path_CreateFcn(hObject, eventdata, handles)
+% Hint: edit conr2.model.base + transl(-0.3, -0.05, 0)trols usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 %
 % 7. Teach Buttons
@@ -916,101 +981,180 @@ guidata(hObject,handles);
 %
 
 
-% --- Executes during object creation, after setting all properties.
-function path_CreateFcn(hObject, eventdata, handles)
-% Hint: edit conr2.model.base + transl(-0.3, -0.05, 0)trols usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+
 
 
 % --- Executes on button press in checkbox1.
 function checkbox1_Callback(hObject, eventdata, handles)
 value = get(hObject,'Value');
-disp(value)
 if value == 1
-    set(handles.vspannel, 'Visible', 'on');
+        
+    if isfield(handles,'r1')
+        set(handles.vspannel, 'Visible', 'on');
+        
+        handles.centr = transl(-0.1, 0, 0.49);
+        handles.vsrot = [0,0,0];
+        handles.P = getP(handles.centr,0.05,2);
+        hold on
+        handles.target = Target(handles.centr);
+        updatevsstrings(hObject, eventdata,handles)
     
-    handles.centr = transl(0,0,0)* troty(pi/2);
-    handles.P = getP(handles.centr,0.025);
-    drawpoints(hObject,handles);
+        handles.cam = CentralCamera('focal', 0.08, 'pixel', 10e-5, ...
+            'resolution', [1024 1024], 'centre', [512 512],'name', 'docam');
+        Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
+        handles.cam.plot_camera('Tcam',Tc0, 'label','scale',0.025);
+        
+        handles.pStar = [362 662;512 512];
+        handles.P = getP(handles.centr,0.05,2);
+        updatecamfeed(hObject, eventdata, handles);
+        
+    else
+        errordlg('Please load the map and assets first','Asset error');
+        handles.checkbox1.Value = 0;
+    end
 else
     set(handles.vspannel, 'Visible', 'off');
+    if isfield(handles,'target')
+        handles.target.DeleteMesh;
+    end
 end
-data = guidata(hObject)
+
 guidata(hObject,handles);
 
+% updates the camera image figure
+function updatecamfeed(hObject, eventdata, handles)
+
+Tc0= handles.r1.model.fkine(handles.r1.model.getpos)*trotx(pi);
+handles.cam.clf()
+handles.cam.plot(handles.pStar, '*'); 
+handles.cam.hold(true);
+handles.cam.plot(handles.P(:,1), 'Tcam', Tc0, 'o')
+handles.cam.plot(handles.P(:,2), 'Tcam', Tc0, 'x')
+
+
+guidata(hObject,handles);
+
+% --- Executes on button press in vsstart.
+function vsstart_Callback(hObject, eventdata, handles)
+value = get(hObject,'Value');
+
+while value == 1
+    Tc0 = handles.r1.model.fkine(handles.r1.model.getpos) * trotx(pi);
+    q0 = handles.r1.model.getpos;
+    
+    p = handles.cam.plot(handles.P,'Tcam',Tc0);
+    if ~(length(handles.pStar) > length(p)) %if we can see all the points in camera view
+        realDepth = getDist(handles.target.pose,Tc0)
+        if (realDepth < 0.1503)
+            % perform movement.
+            disp('vsloop');
+            vsloop(handles.cam,realDepth,0.2,25,handles.pStar,handles.P,handles.r1,q0');
+        else
+            disp('safe');
+        end
+    else
+        disp('cant see symbol');
+    end
+    
+    value = get(hObject,'Value');
+end
+
+
+
+guidata(hObject,handles);
 
 % --- Executes on button press in vsminusx.
 function vsminusx_Callback(hObject, eventdata, handles)
-handles.centr = transl(-0.01,0,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(-0.01,0,0);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusy.
 function vsminusy_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,-0.01,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,-0.01,0);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusz.
 function vsminusz_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0,-0.01) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0,-0.01);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusx.
 function vsplusx_Callback(hObject, eventdata, handles)
-handles.centr = transl(0.01,0,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0.01,0,0);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusy.
 function vsplusy_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0.01,0) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0.01,0);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusz.
 function vsplusz_Callback(hObject, eventdata, handles)
-handles.centr = transl(0,0,0.01) * handles.centr;
-handles.P = getP(handles.centr,0.025);
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+pose = handles.target.pose;
+pose = pose * transl(0,0,0.01);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusroll.
 function vsminusroll_Callback(hObject, eventdata, handles)
-currentCent = handles.centr;
-rot = eye(4);
-rot(1:3,1:3) = handles.centr(1:3,1:3);
-currentCent = currentCent * inv(currentCent);
-currentCent = currentCent*rot*trotx(-0.1);
-currentCent(1:3,4) = handles.centr(1:3,4);
+pose = handles.target.pose;
+pose = pose * trotx(-0.174533);
+handles.target.MoveMesh(pose);
 
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
 
-handles.centr = currentCent;
-handles.P = getP(handles.centr,0.025);
+value = handles.vsrot(1,1);
+value = value -0.1;
+handles.vsrot(1,1) = value;
 
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 
@@ -1019,6 +1163,19 @@ function vsminuspitch_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminuspitch (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * troty(-0.174533);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,2);
+value = value -0.1;
+handles.vsrot(1,2) = value;
+
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 
 % --- Executes on button press in vsminusyaw.
@@ -1026,6 +1183,19 @@ function vsminusyaw_Callback(hObject, eventdata, handles)
 % hObject    handle to vsminusyaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * trotz(-0.174533);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,3);
+value = value -0.1;
+handles.vsrot(1,3) = value;
+
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 
 % --- Executes on button press in vsplusroll.
@@ -1033,20 +1203,18 @@ function vsplusroll_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusroll (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-currentCent = handles.centr;
-rot = eye(4);
-rot(1:3,1:3) = handles.centr(1:3,1:3);
-currentCent = currentCent * inv(currentCent);
-currentCent = currentCent*rot*trotx(0.1);
-currentCent(1:3,4) = handles.centr(1:3,4);
+pose = handles.target.pose;
+pose = pose * trotx(0.174533);
+handles.target.MoveMesh(pose);
 
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
 
-handles.centr = currentCent;
-handles.P = getP(handles.centr,0.025);
+value = handles.vsrot(1,1);
+value = value +0.1;
+handles.vsrot(1,1) = value;
 
-deletepoints(hObject,handles);
-drawpoints(hObject,handles);
-
+updatevsstrings(hObject, eventdata,handles);
 guidata(hObject,handles);
 
 % --- Executes on button press in vspluspitch.
@@ -1054,39 +1222,62 @@ function vspluspitch_Callback(hObject, eventdata, handles)
 % hObject    handle to vspluspitch (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * troty(0.174533);
+handles.target.MoveMesh(pose);
 
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,2);
+value = value +0.1;
+handles.vsrot(1,2) = value;
+
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 % --- Executes on button press in vsplusyaw.
 function vsplusyaw_Callback(hObject, eventdata, handles)
 % hObject    handle to vsplusyaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+pose = handles.target.pose;
+pose = pose * trotz(0.174533);
+handles.target.MoveMesh(pose);
+
+handles.P = getP(pose,0.05,2); % get the points after moving target
+updatecamfeed(hObject, eventdata, handles); % update camera image
+
+value = handles.vsrot(1,3);
+value = value +0.1;
+handles.vsrot(1,3) = value;
+
+updatevsstrings(hObject, eventdata,handles);
+guidata(hObject,handles);
 
 function updatevsstrings(hObject, eventdata,handles)
 % function updates the text labels for in the vspannel
-tr = handles.centr;
+tr = handles.target.pose;
 set(handles.vsx, 'String',tr(1,4));
 set(handles.vsy, 'String',tr(2,4));
 set(handles.vsz, 'String',tr(3,4));
 
-guidata(hObject,handles);
+value = handles.vsrot;
+set(handles.vsroll, 'String',value(1,1));
+set(handles.vspitch, 'String',value(1,2));
+set(handles.vsyaw, 'String',value(1,3));
 
-function drawpoints(hObject,handles)
-% plots the tracking spheres
-P = handles.P;
-pl1 = plot_sphere(P(:,1), 0.025, 'b');
-pl2 = plot_sphere(P(:,2), 0.025, 'b');
-pl3 = plot_sphere(P(:,3), 0.025, 'b');
-pl4 = plot_sphere(P(:,4), 0.025, 'b');
-
-handles.surfs = pl1;
-data = guidata(hObject)
-guidata(hObject,handles);
-
-function deletepoints(hObject,handles)
-% deletes the plotted ones
-    % make a class for the points
-%     drawnow();
 guidata(hObject,handles);
 
 
+
+
+
+
+function path_Callback(hObject, eventdata, handles)
+% hObject    handle to path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of path as text
+%        str2double(get(hObject,'String')) returns contents of path as a double
