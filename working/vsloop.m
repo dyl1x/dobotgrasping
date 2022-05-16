@@ -19,7 +19,7 @@ while true
     ksteps = ksteps + 1;
     
     % compute the view of the camera
-    uv = cam.plot(P)
+    uv = cam.plot(P);
     
     % compute image plane error as a column
     %e = pStar-uv;   % feature error

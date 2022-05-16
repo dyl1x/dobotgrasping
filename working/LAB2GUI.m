@@ -479,33 +479,40 @@ algebraicDist = ((points(:,1)-centerPoint(1))/radii(1)).^2 ...
 % --- Executes on button press in simstarter.
 function simstarter_Callback(hObject, eventdata, handles)
 
-handles.simstarter.UserData = 1;
-guidata(hObject, handles)
-i = 1;
-l = 1;
-
-while (1)
-
-    steps = 9;
-
-    if l > 3, break; end
-    if handles.exitbutton.UserData == 1, break; end
-
-
-    if mod(i, steps * l) == 0
-        l = l + 1;
-    else
-        sequences(i, steps, handles);
-        i = i + 1;
+if isfield(handles,'r1')
+    handles.simstarter.UserData = 1;
+    guidata(hObject, handles)
+    i = 1;
+    l = 1;
+    
+    while (1)
+        
+        steps = 9;
+        
+        if l > 3, break; end
+        if handles.exitbutton.UserData == 1, break; end
+        
+        
+        if mod(i, steps * l) == 0
+            l = l + 1;
+        else
+            sequences(i, steps, handles);
+            i = i + 1;
+        end
+        
     end
-
+    
+    if handles.exitbutton.UserData == 1
+        disp('Returning out of sim start')
+        closereq();
+        %     return;
+    end
+else
+    errordlg('Please load the map and assets first','Asset error');
 end
 
-if handles.exitbutton.UserData == 1
-    disp('Returning out of sim start')
-    closereq();
-%     return;
-end
+
+
 
 
 
@@ -600,6 +607,13 @@ if handles.estop.Value == 1
     pt = 0.5;
     while 1
         disp('awaiting input . . .');
+        
+        if isfield(handles,'s')
+            try
+                checkhardwarestop(hObject,handles);
+            catch me
+            end
+        end
         if handles.cont.Value == 0, handles.estop.Value = 0; break;
         else, pause(pt); continue; end
     end
@@ -621,11 +635,14 @@ if handles.exitbutton.Value == 1
     disp('Exiting GUI')
     try
         stop(handles.timer);
+    catch me
+        disp(me);
+    end
+    try
         delete(timerfindall)
     catch me
         disp(me);
     end
-    
     handles.exitbutton.Value = 0;
     guidata(hObject, handles);
     if handles.simstarter.UserData == 0, closereq(); end
@@ -642,11 +659,14 @@ if handles.exitbutton.Value == 1
     disp('Exiting GUI')
     try
         stop(handles.timer);
+    catch me
+        disp(me);
+    end
+    try
         delete(timerfindall)
     catch me
         disp(me);
     end
-    
     handles.exitbutton.Value = 0;
     guidata(hObject, handles);
     if handles.simstarter.UserData == 0, closereq(); end
@@ -666,7 +686,7 @@ path = get(handles.path,'String');
 try
     s = serialport(path,9600); % connect to hardware through serial
     handles.s = s;
-    handles.timer = timer('ExecutionMode', 'fixedRate', 'Period', 1,'TimerFcn', {@checkhardwarestop,hObject,handles});
+    handles.timer = timer('ExecutionMode', 'fixedRate', 'Period', 0.5,'TimerFcn', {@checkhardwarestop,hObject,handles});
     handles.timer.start;
 catch me
     disp(me);
@@ -681,7 +701,7 @@ guidata(hObject,handles);
 function checkhardwarestop(~,~,hObject,handles)
 % polls serial port to see the state of the estop
 flush(handles.s);
-data = read(handles.s,1,"char");
+data = read(handles.s,1,"char")
 % arduino code send 1 if estop is on and 0 if estop is turned off
 % update the variables
 eventdata = 0;
@@ -936,6 +956,7 @@ if value == 1
         
     else
         errordlg('Please load the map and assets first','Asset error');
+        handles.checkbox1.Value = 0;
     end
 else
     set(handles.vspannel, 'Visible', 'off');

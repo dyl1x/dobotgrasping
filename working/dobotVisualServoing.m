@@ -28,7 +28,7 @@ pStar = [362 662;512 512];
 
 
 
-cent = transl(0.19,0,0.05) * trotz(0.1);
+cent = transl(0.187,0,0.0) * trotz(0.1);
 
 hold on
  target = Target(cent);
