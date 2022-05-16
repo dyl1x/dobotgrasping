@@ -70,5 +70,9 @@ classdef PCB <handle
             updated_points = [self.pose * [self.vertices, ones(self.vSize, 1)]']';
             self.mesh_h.Vertices = updated_points(:, 1:3);
         end
+
+        function reload(self)
+            drawnow();
+        end
     end
 end

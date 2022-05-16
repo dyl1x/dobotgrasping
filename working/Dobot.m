@@ -14,16 +14,18 @@ classdef Dobot < handle
     end
     
     methods
-        function self = Dobot(workspace, num, tooltip)    
+        function self = Dobot(workspace, num, c1, c2)    
+        if ~exist('c1', 'var'), c1 = false; end
+        if ~exist('c2', 'var'), c2 = 1; end
 
-        self.GetDobotRobot(num);
+        self.GetDobotRobot(num, c1);
 
-        self.PlotAndColourRobot(workspace, tooltip);
+        self.PlotAndColourRobot(workspace, c2);
         end
         
         %% GetDobotRobot
         
-        function GetDobotRobot(self, num)
+        function GetDobotRobot(self, num, c)
         
             % Create a unique name (ms timestamp after 1ms pause)
             pause(0.01);
@@ -32,35 +34,50 @@ classdef Dobot < handle
             L1 = Link('d', 0.1, 'a', 0, 'alpha', -pi/2, 'offset', 0, 'qlim', deg2rad([-135, 135]));      % Base
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', -pi/2, 'qlim', deg2rad([5, 85]));           % Rear Arm
             L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([15, 170]));         % Forearm
-            L4 = Link('d', 0, 'a', -0.04, 'alpha', -pi/2, 'offset', pi/2, 'qlim', deg2rad([-90, 90]));
-            L5 = Link('d', -0.05, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([-90, 90]));            % End effector
-           
+            
+            if ~c
+                L4 = Link('d', 0, 'a', -0.04, 'alpha', -pi/2, 'offset', pi/2, 'qlim', deg2rad([-90, 90]));
+                L5 = Link('d', -0.05, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([-90, 90]));            % End effector
+            else
+                L4 = Link('d', 0.065, 'a', -0.05, 'alpha', -pi/2, 'offset', pi/2, 'qlim', deg2rad([-90, 90]));
+                L5 = Link('d', -0.02, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([0, 0]));
+            end
+
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
         end
         %% PlotAndColourRobot
         % Given a robot index, add the glyphs (vertices and faces) and
         % colour them in if data is available 
-        function PlotAndColourRobot(self, workspace, tooltip)
-            % tooltip: 1 - gripper (d5), 2 - suction cup (d6)
-            for linkIndex = 0:self.model.n % d0.ply - d6.ply
-                if (linkIndex == 4)
-                    continue
-                elseif (linkIndex == 5)
-                    if tooltip == 1
-                        disp('d5.ply')
-                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('../res/dobot/d5.ply','tri');
+        function PlotAndColourRobot(self, workspace, c)
+
+            if c == 2
+                for linkIndex = 0:self.model.n % d0.ply - d5.ply
+                    if linkIndex == 4
+                        self.model.faces{linkIndex+1} = [];
+                        self.model.points{linkIndex+1} = [];
+                    elseif linkIndex == 5
+                        disp(strcat(['laser_gripper.ply']))
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../res/dobot/laser_gripper.ply'], 'tri');
+                        self.model.faces{linkIndex+1} = faceData;
+                        self.model.points{linkIndex+1} = vertexData;
                     else
-                        disp('d6.ply')
-                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread('../res/dobot/d6.ply','tri');
+                        disp(strcat(['d', num2str(linkIndex), '.ply']))
+                        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../res/dobot/d',num2str(linkIndex),'.ply'],'tri');
+               
+                        self.model.faces{linkIndex+1} = faceData;
+                        self.model.points{linkIndex+1} = vertexData;
                     end
-                else
+                end
+            else
+                for linkIndex = 0:self.model.n % d0.ply - d5.ply
+    
                     disp(strcat(['d', num2str(linkIndex), '.ply']))
                     [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['../res/dobot/d',num2str(linkIndex),'.ply'],'tri');
-                    
+           
+                    self.model.faces{linkIndex+1} = faceData;
+                    self.model.points{linkIndex+1} = vertexData;
                 end
-                self.model.faces{linkIndex+1} = faceData;
-                self.model.points{linkIndex+1} = vertexData;
             end
         
             % Display robot
@@ -72,21 +89,17 @@ classdef Dobot < handle
         
             % Try to correctly colour the arm (if colours are in ply file data)
             for linkIndex = 0:self.model.n
-                
-                if (linkIndex == 4)
-                else
-                    handles = findobj('Tag', self.model.name);
-                    h = get(handles,'UserData');
-                    try
-                        h.link(linkIndex+1).Children.FaceVertexCData = [plyData{linkIndex+1}.vertex.red ...
-                            , plyData{linkIndex+1}.vertex.green ...
-                            , plyData{linkIndex+1}.vertex.blue]/255;
-                        h.link(linkIndex+1).Children.FaceColor = 'interp';
-                    catch ME_1
-                        disp(ME_1);
-                        continue;
-                    end
-                end                 
+                handles = findobj('Tag', self.model.name);
+                h = get(handles,'UserData');
+                try
+                    h.link(linkIndex+1).Children.FaceVertexCData = [plyData{linkIndex+1}.vertex.red ...
+                        , plyData{linkIndex+1}.vertex.green ...
+                        , plyData{linkIndex+1}.vertex.blue]/255;
+                    h.link(linkIndex+1).Children.FaceColor = 'interp';
+                catch ME_1
+                    disp(ME_1);
+                    continue;
+                end          
             end
         end
 

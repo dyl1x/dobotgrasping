@@ -105,11 +105,11 @@ ws = [-0.5 0.5 -0.5 0.5 0 0.8];
 [q2_, q3_] = deal(deg2rad(35), deg2rad(105));
 q0 = [-pi/2 q2_ q3_ constrain_joint4(q2_, q3_) 0];
 
-r1 = Dobot(ws, 1, 2);
+r1 = Dobot(ws, 1);
 r1.model.base = transl(-0.1, -0.15, 0.49) * trotz(pi);
 r1.model.animate(q0);
 
-r2 = Dobot(ws, 2, 2);
+r2 = Dobot(ws, 2, true, 2);
 r2.model.base = transl(0.2, -0.45, 0.49) * trotz(pi);
 r2.model.animate(q0);
 hold on
@@ -117,10 +117,10 @@ hold on
 drawnow();
 axis equal
 
-pcb1 = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
-pcb2 = PCB(2, transl(-0.31, 0.3, handles.h));
-pcb3 = PCB(3, transl(-0.33, 0.6, handles.h));
-pcbs = [pcb1, pcb2, pcb3];
+pcbs = [];
+pcbs{1} = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
+pcbs{2} = PCB(2, transl(-0.31, 0.3, handles.h));
+pcbs{3} = PCB(3, transl(-0.33, 0.6, handles.h));
 
 view([0 0 1]);
 handles.r1 = r1;
@@ -257,7 +257,7 @@ function [handles] = animate_dual_traj(handles, qm1, d1, m1, qm2, d2, m2, plot, 
     if mp(2) == true, o(2).MoveMesh(ds2); end
 
 
-function animate_conveyor(handles, obj, start, finish, steps)
+function handles = animate_conveyor(handles, obj, start, finish, steps)
     if ~exist('pt', 'var'), pt = 0.02; end
     start_pos = start(1:3, 4)';
     finish_pos = finish(1:3, 4)';
@@ -273,8 +273,27 @@ function animate_conveyor(handles, obj, start, finish, steps)
     end
 
     for i=1:steps
+        if i == 1, prev_ee = [eye(3), obj.pose(1:3, 4); zeros(1, 3), 1]; else, prev_ee = obj.pose; end
         obj.tran(x(:, i)');
+
+        if ~isempty(handles.current_traces)
+            obj_pos = obj.pose(1:3, 4);
+            prev_pos = prev_ee(1:3, 4);
+            for j=1:length(handles.current_traces)
+                x_ = handles.current_traces{j}.XData;
+                y_ = handles.current_traces{j}.YData;
+                z_ = handles.current_traces{j}.ZData;
+                rot = obj.pose(1:3, 1:3);
+                xyz_ = rot * [obj_pos(1) - prev_pos(1), obj_pos(2) - prev_pos(2), z_]';
+%                         disp(xyz_);
+                handles.current_traces{j}.XData = x_ + xyz_(1);
+                handles.current_traces{j}.YData = y_ + xyz_(2);
+                handles.current_traces{j}.ZData = xyz_(3);
+            
+            end
+        end
         pause(pt);
+        if handles.exitbutton.UserData == 1, return; end
     end
 
 
@@ -499,7 +518,6 @@ function [handles] = trace_path(handles, obj, model, plot)
 %      keyboard;
 
     handles.current_traces = plt;
-%      for i=1:length(plt), delete(plt{i}); end
  
 
 function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
@@ -547,11 +565,11 @@ if isfield(handles,'r1')
         if l > 3, break; end
         if handles.exitbutton.UserData == 1, break; end
         
-        
         if mod(i, steps * l) == 0
             l = l + 1;
         else
-            sequences(i, steps, handles);
+            handles = sequences(i, steps, handles);
+            guidata(hObject, handles);
             i = i + 1;
         end
     end
@@ -585,11 +603,11 @@ function [handles] = sequences(i, steps, handles)
         disp(strcat(['PCB: ', num2str(ceil(i/steps))]));
 
         disp('a. SEQ -- Move R1 from q0 to pcb')
-        handles = animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, false, 1, 0, false, false);
+        handles = animate_traj(handles, handles.pcbs{ceil(i / steps)}.pose, handles.r1.model, false, 1, 0, false, false);
 
     elseif mod(i, steps) == 2
         disp('b. SEQ -- Move R1 to ws origin')
-        handles = animate_traj(handles, ws_origin, handles.r1.model, handles.pcbs(ceil(i / steps)), 5, -0.1, false, true);
+        handles = animate_traj(handles, ws_origin, handles.r1.model, handles.pcbs{ceil(i / steps)}, 5, -0.1, false, true);
 
 %     disp('c. SEQ -- Move R1 to stow away pose for laser operation')
 %     animate_traj(handles, stow_away, handles.r1.model, false, 1, false, false, false)
@@ -603,7 +621,7 @@ function [handles] = sequences(i, steps, handles)
 
     elseif mod(i, steps) == 4
         % Insert trace paths here
-        handles = trace_path(handles, handles.pcbs(ceil(i / steps)), handles.r2.model, true);
+        handles = trace_path(handles, handles.pcbs{ceil(i / steps)}, handles.r2.model, true);
 
     elseif mod(i, steps) == 5
         disp('f. Move R2 to q0')
@@ -612,11 +630,11 @@ function [handles] = sequences(i, steps, handles)
 
     elseif mod(i, steps) == 6
         disp('g. Move R1 from stow away to pcb1')
-        handles = animate_traj(handles, handles.pcbs(ceil(i / steps)).pose, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, false);
+        handles = animate_traj(handles, handles.pcbs{ceil(i / steps)}.pose, handles.r1.model, handles.pcbs{ceil(i / steps)}, 1, false, false, false);
 
     elseif mod(i, steps) == 7
         disp('h. Move R1 from ws origin to conveyor out with pcb1')
-        handles = animate_traj(handles, conv_out, handles.r1.model, handles.pcbs(ceil(i / steps)), 1, false, false, true);
+        handles = animate_traj(handles, conv_out, handles.r1.model, handles.pcbs{ceil(i / steps)}, 1, false, false, true);
 
     elseif mod(i, steps) == 8
         disp('i. Move R1 from conveyor out to q0')
@@ -624,10 +642,21 @@ function [handles] = sequences(i, steps, handles)
 
     elseif mod(i, steps) == 0
         % 8a. Animate Conveyor
-        animate_conveyor(handles.pcbs(ceil(i / steps)), handles.pcbs(ceil(i / steps)).pose, handles.pcbs(ceil(i / steps)).pose - transl(0.7, 0, 0), 30);
-        if ceil(i / steps) < 2 animate_conveyor(handles.pcbs(2), handles.pcbs(2).pose, handles.pcbs(2).pose - transl(0, 0.3, 0), 30); end
-        if ceil(i / steps) < 3 animate_conveyor(handles.pcbs(3), handles.pcbs(3).pose, handles.pcbs(3).pose - transl(0, 0.3, 0), 30); end
+        handles = animate_conveyor(handles, handles.pcbs{ceil(i / steps)}, handles.pcbs{ceil(i / steps)}.pose, handles.pcbs{ceil(i / steps)}.pose - transl(0.7, 0, 0), 30);
+        pause(1);
+        disp('deleting trace');
+        for a=1:length(handles.current_traces), delete(handles.current_traces{a}); end
+        handles.current_traces = [];
+        handles.pcbs{ceil(i/steps)}.mesh_h.Vertices = [];
+        
+        if ceil(i / steps) < 2 handles = animate_conveyor(handles, handles.pcbs{2}, handles.pcbs{2}.pose, handles.pcbs{2}.pose - transl(0, 0.3, 0), 30); end
+        if ceil(i / steps) < 3 handles = animate_conveyor(handles, handles.pcbs{3}, handles.pcbs{3}.pose, handles.pcbs{3}.pose - transl(0, 0.3, 0), 30); end
+        
+        pause(1.5);
+        
     end
+
+
 
 
 % 
