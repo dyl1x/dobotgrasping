@@ -33,7 +33,7 @@ classdef Dobot < handle
             L2 = Link('d', 0, 'a', 0.135, 'alpha', 0, 'offset', -pi/2, 'qlim', deg2rad([5, 85]));           % Rear Arm
             L3 = Link('d', 0, 'a', 0.147, 'alpha', 0, 'offset', 0, 'qlim', deg2rad([15, 170]));         % Forearm
             L4 = Link('d', 0, 'a', -0.04, 'alpha', -pi/2, 'offset', pi/2, 'qlim', deg2rad([-90, 90]));
-            L5 = Link('d', -0.05, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([0, 0]));            % End effector
+            L5 = Link('d', -0.05, 'a', 0, 'alpha', 0, 'offset', pi, 'qlim', deg2rad([-90, 90]));            % End effector
            
             self.model = SerialLink([L1 L2 L3 L4 L5], 'name', self.name);
         
