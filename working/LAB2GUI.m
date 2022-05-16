@@ -119,7 +119,7 @@ axis equal
 
 pcbs = [];
 pcbs{1} = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
-pcbs{2} = PCB(2, transl(-0.31, 0.3, handles.h));
+pcbs{2} = PCB(2, transl(-0.31, 0.3, handles.h) * trotz(pi));
 pcbs{3} = PCB(3, transl(-0.33, 0.6, handles.h));
 
 view([0 0 1]);
@@ -140,7 +140,6 @@ guidata(hObject,handles);
 set(handles.radiobutton2, 'Visible', 'on');
 update_strings(hObject,handles);
 guidata(hObject,handles);
-
 
 
 
@@ -585,9 +584,6 @@ end
 
 
 
-
-
-
 function [handles] = sequences(i, steps, handles)
     % workspace origin (where transporter and laser could collide)
     ws_origin = transl(-0.03, -0.42, handles.h);
@@ -776,9 +772,6 @@ catch me
     errordlg('Serial device could not be found in specified path','Serial Path Error');
 end
 guidata(hObject,handles);
-
-
-
 
 
 function checkhardwarestop(~,~,hObject,handles)

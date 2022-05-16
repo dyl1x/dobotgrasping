@@ -32,33 +32,12 @@ classdef Environments < handle
         function GenerateEnv(self)
             
             disp('generating environment ...');
-            %surf(x,y,z)
-            %x = [left top, right top, left b, right b]
-            %floor
+
             floorSize = self.envSize + 0.5;
-            surf([-1.25, -1.25; 0.6, 0.6],[-0.8, 0.8; -0.8, 0.8],[0.01,0.01;0.01,0.01],...
+            surf([-1.25, -1.25; 0.8, 0.8],[-0.8, 0.8; -0.8, 0.8],[0.01,0.01;0.01,0.01],...
                 'CData', imread('images/floor.jpg'), 'FaceColor','texturemap');
             hold on
-            %fenced walls
-%             surf([-self.envSize, -self.envSize; self.envSize, self.envSize],[self.envSize, self.envSize; self.envSize, self.envSize],[0.01,self.height;0.01,self.height], ...
-%                 'CData', imread('images/fence.jpg'),'FaceAlpha','texturemap', 'FaceColor','texturemap');
-% 
-%             surf([-self.envSize, -self.envSize; self.envSize, self.envSize],[-self.envSize, -self.envSize; -self.envSize, -self.envSize],[0.01,self.height;0.01,self.height],...
-%                 'CData', imread('images/fence.jpg'),'FaceAlpha','texturemap', 'FaceColor','texturemap');
-% 
-%             surf([-self.envSize, -self.envSize; -self.envSize, -self.envSize],[self.envSize, self.envSize; -self.envSize, -self.envSize],[0.01,self.height;0.01,self.height],...
-%                 'CData', imread('images/fence.jpg'),'FaceAlpha','texturemap', 'FaceColor','texturemap');
-% 
-%             %backwall
-%             surf([self.envSize, self.envSize; self.envSize, self.envSize],[self.envSize, self.envSize; -self.envSize, -self.envSize],[0.01,self.height;0.01,self.height],...
-%                 'CData', imread('images/wall.jpeg'), 'FaceColor','texturemap');
-%             %warning
-%             surf([self.envSize-0.01, self.envSize-0.01; self.envSize-0.01, self.envSize-0.01],[self.envSize, self.envSize-1; self.envSize, self.envSize-1],[self.height,self.height;self.height-0.5,self.height-0.5],...
-%                 'CData', imread('images/robotsselfaware.jpg'), 'FaceColor','texturemap');
-%             %door
-%             surf([-self.envSize, -self.envSize; -self.envSize, -self.envSize],[-(self.envSize-2), -(self.envSize-0.5); -(self.envSize-2), -(self.envSize-0.5)],[2, 2; 0.01, 0.01],...
-%                 'CData', imread('images/door.jpg'),'FaceAlpha','texturemap', 'FaceColor','texturemap');
-            
+
             axis equal
             
             disp('environment completed');
@@ -71,6 +50,7 @@ classdef Environments < handle
         function LoadProps(self)
             
             hold on
+
             % 1st dobot table
             mesh_h = PlaceObject('models/table.PLY');
             tf = trotz(-pi/2) * transl(-0.05, 0, 0.01)';
@@ -99,14 +79,25 @@ classdef Environments < handle
             transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
+            % E-Stop
             mesh_h = PlaceObject('models/estop.ply');
-            
             vertices = get(mesh_h,'Vertices');
-%             transformedVertices = [vertices,ones(size(vertices,1),1)] * troty(deg2rad(30))';
-%             set(mesh_h,'Vertices',transformedVertices(:,1:3));
             transformedVertices = [vertices,ones(size(vertices,1),1)] * transl(0.05, 0.2, 0.5)';
             set(mesh_h,'Vertices',transformedVertices(:,1:3));
 
+            % Fence
+            mesh_h = PlaceObject('models/scaled_fence.PLY');
+            tf = transl(-0.8, 0, 0.01)' * trotz(pi/2);
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
+            
+            % Fence
+            mesh_h = PlaceObject('models/scaled_fence.PLY');
+            tf = transl(-1.2, 0.3, 0.01)';
+            vertices = get(mesh_h,'Vertices');
+            transformedVertices = [vertices,ones(size(vertices,1),1)] * tf;
+            set(mesh_h,'Vertices',transformedVertices(:,1:3));
         end
 
     end

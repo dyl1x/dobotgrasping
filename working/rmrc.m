@@ -53,17 +53,24 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
         end 
     elseif path == 4 % x and y sin change
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta); % Points in x
-            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2) + weight*sin((i/2)*delta); % Points in y
-            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);                % Points in z
-            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta);  % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2) + weight*sin((i/2)*delta);  % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3);                            % Points in z
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);                     % Roll, Pitch, Yaw angle 
         end
     elseif path == 5 % x and z sin change
         for i = 1:steps
-            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta); % Points in x
-            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);                           % Points in y
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight*sin((i/2)*delta);      % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);                                % Points in y
             x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3) + (-weight/2)*sin((i/2)*delta); % Points in y                
-            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);% Roll, Pitch, Yaw angle 
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);                         % Roll, Pitch, Yaw angle 
+        end
+    elseif path == 6 % x and z sin change
+        for i = 1:steps
+            x(1,i) = (1-s(i)) * start_pos(1) + s(i) * finish_pos(1) + weight * sin(i * delta);      % Points in x
+            x(2,i) = (1-s(i)) * start_pos(2) + s(i) * finish_pos(2);                              % Points in y
+            x(3,i) = (1-s(i)) * start_pos(3) + s(i) * finish_pos(3) + weight * sin(i * delta); % Points in y                
+            theta(:, i) = rotm2eul(1-s(i) * start_rot + s(i) * finish_rot);                       % Roll, Pitch, Yaw angle 
         end 
     end
     
