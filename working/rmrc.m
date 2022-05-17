@@ -5,7 +5,7 @@ function [qMatrix, x] = rmrc(start, finish, q0, model, plot, path, weight, n)
     
     % 1.1) Set parameters for the simulation
     t = 1;                           % Total time (s)
-    deltaT = 0.02;                   % Control frequency
+    deltaT = 0.04;                   % Control frequency
     steps = t/deltaT;                % No. of steps for simulation
     delta = 2*pi/steps;              % Small angle change
     epsilon = 1E-6;                   % Threshold value for manipulability/Damped Least Squares

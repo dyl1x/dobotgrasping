@@ -3,6 +3,8 @@
 
 Industrial Robotics Lab Assignment 2 AUT 2022
 
+![lab2gui.png](lab2gui.png)
+
 ## Info
 
 #### Brief:   

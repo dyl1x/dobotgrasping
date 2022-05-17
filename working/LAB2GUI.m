@@ -151,10 +151,15 @@ guidata(hObject,handles);
 function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot, move_ply)
     if ~exist('pt', 'var'), pt = handles.pt; end
 
-    current_pose = model.fkine(model.getpos);
-    q = model.getpos;
-    [qmatrix, desired] = rmrc(current_pose, dest, q, model, false, path, weight);
+    if move_ply == true
+        % make sure ee rot aligns with obj.pose
+        [qmatrix, desired] = rmrc(model.fkine(model.getpos), obj.pose, model.getpos, model, false, path, weight);
+        for i=1:length(qmatrix) model.animate(qmatrix(i, :)); end
+    end
+
+    [qmatrix, desired] = rmrc(model.fkine(model.getpos), dest, model.getpos, model, false, path, weight); 
     
+    % animate the model
     if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % pl
     for i=1:length(qmatrix)
         model.animate(qmatrix(i, :));
@@ -162,39 +167,42 @@ function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot,
         if i == 1, prev_ee = [eye(3), ee(1:3, 4); zeros(1, 3), 1]; else, prev_ee = model.fkine(qmatrix(i-1, :)); end
 
         if plot == true, plot3(ee(1, 4), ee(2, 4), ee(3, 4), 'b*'); end
-        if move_ply == true, obj.MoveMesh(ee);
-
+        if move_ply == true, old_rot = obj.pose; obj.MoveMesh(ee);
+            
+            % animate trace movement
             if ~isempty(handles.current_traces)
                 if i == 1
-                    obj_pos = ee(1:3, 4);
+                    init_rot = ee(1:3, 1:3);
+                    rpy = tr2rpy(init_rot);
+                    obj_pos = old_rot(1:3, 4);
                     for j=1:length(handles.current_traces)
-                        init_rot = ee(1:3, 1:3);
 
                         x_ = handles.current_traces{j}.XData;
                         y_ = handles.current_traces{j}.YData;
                         z_ = handles.current_traces{j}.ZData;
 
-                        xyz_ = init_rot * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+                        
+                        xyz_ = init_rot * rotz(pi/2) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
 
                         handles.current_traces{j}.XData = obj_pos(1) + xyz_(1);
                         handles.current_traces{j}.YData = obj_pos(2) + xyz_(2);
                         handles.current_traces{j}.ZData = xyz_(3);
 
                     end
-                elseif i == length(qmatrix)
-                    obj_pos = ee(1:3, 4);
-                    for j=1:length(handles.current_traces)
-
-                        x_ = handles.current_traces{j}.XData;
-                        y_ = handles.current_traces{j}.YData;
-                        z_ = handles.current_traces{j}.ZData;
-
-                        xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
-
-                        handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
-                        handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
-                        handles.current_traces{j}.ZData = xyz_(3);
-                    end
+%                 elseif i == length(qmatrix)
+%                     obj_pos = ee(1:3, 4);
+%                     for j=1:length(handles.current_traces)
+% 
+%                         x_ = handles.current_traces{j}.XData;
+%                         y_ = handles.current_traces{j}.YData;
+%                         z_ = handles.current_traces{j}.ZData;
+% 
+%                         xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+% 
+%                         handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
+%                         handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
+%                         handles.current_traces{j}.ZData = xyz_(3);
+%                     end
                 else
                     obj_pos = ee(1:3, 4);
                     prev_pos = prev_ee(1:3, 4);
@@ -282,9 +290,10 @@ function handles = animate_conveyor(handles, obj, start, finish, steps)
                 x_ = handles.current_traces{j}.XData;
                 y_ = handles.current_traces{j}.YData;
                 z_ = handles.current_traces{j}.ZData;
+
                 rot = obj.pose(1:3, 1:3);
                 xyz_ = rot * [obj_pos(1) - prev_pos(1), obj_pos(2) - prev_pos(2), z_]';
-%                         disp(xyz_);
+
                 handles.current_traces{j}.XData = x_ + xyz_(1);
                 handles.current_traces{j}.YData = y_ + xyz_(2);
                 handles.current_traces{j}.ZData = xyz_(3);
@@ -379,34 +388,19 @@ function [handles] = trace_path(handles, obj, model, plot)
     plt = [];
      if obj.type == 1
         
-        tfs = zeros(4, 4, 3);
-        tfs(:, :, 1) = transl(-0.05, -0.02, 0.005);
+        tfs = zeros(4, 4, 8);
+        tfs(:, :, 1) = transl(-0.02, 0.05, 0.005);
 
-        tfs(:, :, 2) = transl(0.1, 0, 0);
-%         tfs(:, :, 3) = transl(-0.045, -0.02, 0);
-%         tfs(:, :, 4) = transl(0, -0.02, 0);
-%         tfs(:, :, 5) = transl(0.045, 0.02, 0);
-% 
-%         tfs(:, :, 6) = transl(0, -0.02, 0);
-%         tfs(:, :, 7) = transl(0, -0.02, 0);
-%         tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
-% 
-%         tfs(:, :, 9) = transl(0, -0.02, 0);
-%         tfs(:, :, 10) = transl(0.035, 0.0175, 0);
-%         
-%         tfs(:, :, 11) = transl(0.005, -0.02, 0);
-% 
-%         tfs(:, :, 12) = transl(-0.02, 0, 0);
-%         tfs(:, :, 13) = transl(0, -0.02, 0);
-%         tfs(:, :, 14) = transl(0.02, 0, 0);
-%         
-%         tfs(:, :, 15) = transl(0, -0.02, 0);
-%         tfs(:, :, 16) = transl(-0.025, 0, 0);
-%         tfs(:, :, 17) = transl(-0.025, 0.025, 0);
-%         tfs(:, :, 18) = transl(0, -0.05, 0);
-%         tfs(:, :, 19) = transl(0.045, 0, 0);
+        tfs(:, :, 2) = transl(0.05, 0, 0);
+        tfs(:, :, 3) = transl(-0.045, -0.02, 0);
+        tfs(:, :, 4) = transl(0, -0.02, 0);
+        tfs(:, :, 5) = transl(0.045, 0.02, 0);
+
+        tfs(:, :, 6) = transl(0, -0.02, 0);
+        tfs(:, :, 7) = transl(0, -0.02, 0);
+        tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
         
-        tfs(:, :, 3) = transl(-0.1, -0.1, 0);
+%         tfs(:, :, 3) = transl(-0.1, -0.1, 0);
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
@@ -422,7 +416,7 @@ function [handles] = trace_path(handles, obj, model, plot)
         end
 
     elseif obj.type == 2 % More complex shape
-        tfs = zeros(4, 4, 20);
+        tfs = zeros(4, 4, 13);
 
         tfs(:, :, 1) = transl(0.04, 0.03, 0.005);
 
@@ -441,16 +435,16 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 11) = transl(0, -0.01, 0);
         tfs(:, :, 12) = transl(-0.07, 0, 0);
 
-        tfs(:, :, 13) = transl(0.09, -0.06, 0);
-        tfs(:, :, 14) = transl(-0.09, 0.02, 0);
-        tfs(:, :, 15) = transl(0, 0.02, 0);
-
-        tfs(:, :, 16) = transl(0.02, 0, 0);
-        tfs(:, :, 17) = transl(0, -0.02, 0);
-        tfs(:, :, 18) = transl(0.04, 0, 0);
-        tfs(:, :, 19) = transl(0.02, 0, 0);
-        
-        tfs(:, :, 20) = transl(-0.15, -0.15, 0);
+%         tfs(:, :, 13) = transl(0.09, -0.06, 0);
+%         tfs(:, :, 14) = transl(-0.09, 0.02, 0);
+%         tfs(:, :, 15) = transl(0, 0.02, 0);
+% 
+%         tfs(:, :, 16) = transl(0.02, 0, 0);
+%         tfs(:, :, 17) = transl(0, -0.02, 0);
+%         tfs(:, :, 18) = transl(0.04, 0, 0);
+%         tfs(:, :, 19) = transl(0.02, 0, 0);
+%         
+        tfs(:, :, 13) = transl(-0.15, -0.15, 0);
         
         l = size(tfs);
         for i=1:l(3)
@@ -586,7 +580,7 @@ end
 
 function [handles] = sequences(i, steps, handles)
     % workspace origin (where transporter and laser could collide)
-    ws_origin = transl(-0.03, -0.42, handles.h);
+    ws_origin = transl(-0.03, -0.42, handles.h) * trotz(pi/2);
     
     % transporter stow pos when laser operating
     stow_away = [ws_origin(1:3, 1:3), ws_origin(1:3, 4) - [0.1; -0.1; 0]; zeros(1, 3), 1;];
@@ -643,7 +637,7 @@ function [handles] = sequences(i, steps, handles)
         disp('deleting trace');
         for a=1:length(handles.current_traces), delete(handles.current_traces{a}); end
         handles.current_traces = [];
-        handles.pcbs{ceil(i/steps)}.mesh_h.Vertices = [];
+        try handles.pcbs{ceil(i/steps)}.mesh_h.Vertices = []; catch, end
         
         if ceil(i / steps) < 2 handles = animate_conveyor(handles, handles.pcbs{2}, handles.pcbs{2}.pose, handles.pcbs{2}.pose - transl(0, 0.3, 0), 30); end
         if ceil(i / steps) < 3 handles = animate_conveyor(handles, handles.pcbs{3}, handles.pcbs{3}.pose, handles.pcbs{3}.pose - transl(0, 0.3, 0), 30); end

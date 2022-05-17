@@ -50,8 +50,15 @@ classdef Dobot < handle
         % Given a robot index, add the glyphs (vertices and faces) and
         % colour them in if data is available 
         function PlotAndColourRobot(self, workspace, c)
+            
+            % original files for dobot, gripper and suction cup. then
+            % painted, transformed and mutilated into laser tooltip model
+            % using blender.
 
-            if c == 2
+            % https://forum.dobot.cc/t/3d-model-of-dobot-magician/229
+            % https://www.dropbox.com/s/9a3byv5vsm3446d/3D-Model%20DOBOT%20Magician%20incl.%20Tools.zip?dl=0
+
+            if c == 2 % Laser gripper tooltip
                 for linkIndex = 0:self.model.n % d0.ply - d5.ply
                     if linkIndex == 4
                         self.model.faces{linkIndex+1} = [];
@@ -69,7 +76,7 @@ classdef Dobot < handle
                         self.model.points{linkIndex+1} = vertexData;
                     end
                 end
-            else
+            else % original model with suction cup
                 for linkIndex = 0:self.model.n % d0.ply - d5.ply
     
                     disp(strcat(['d', num2str(linkIndex), '.ply']))
