@@ -10,7 +10,7 @@ Industrial Robotics Lab Assignment 2 AUT 2022
 #### Brief:   
 
 To simulate the operation of 2 Dobots to draw traces on a PCB.
-We recorded a video of a real Dobot tracing a path on a page to emulate the
+We recorded a video of a real Dobot tracing a path on a page to emulate the simulation
 
 
 ## Requirements

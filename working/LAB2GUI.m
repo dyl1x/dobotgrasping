@@ -43,7 +43,7 @@ end
 
 % --- Executes just before LAB2GUI is made visible.
 function LAB2GUI_OpeningFcn(hObject, eventdata, handles, varargin)
-
+cla
 handles.exitbutton.UserData = 0;
 handles.simstarter.UserData = 0;
 
@@ -119,7 +119,7 @@ axis equal
 
 pcbs = [];
 pcbs{1} = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
-pcbs{2} = PCB(2, transl(-0.31, 0.3, handles.h) * trotz(pi));
+pcbs{2} = PCB(2, transl(-0.335, 0.3, handles.h) * trotz(pi));
 pcbs{3} = PCB(3, transl(-0.33, 0.6, handles.h));
 
 view([0 0 1]);
@@ -189,20 +189,25 @@ function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot,
                         handles.current_traces{j}.ZData = xyz_(3);
 
                     end
-%                 elseif i == length(qmatrix)
-%                     obj_pos = ee(1:3, 4);
-%                     for j=1:length(handles.current_traces)
-% 
-%                         x_ = handles.current_traces{j}.XData;
-%                         y_ = handles.current_traces{j}.YData;
-%                         z_ = handles.current_traces{j}.ZData;
-% 
-%                         xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
-% 
-%                         handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
-%                         handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
-%                         handles.current_traces{j}.ZData = xyz_(3);
-%                     end
+                elseif i == length(qmatrix)
+                    obj_pos = ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+
+                        x_ = handles.current_traces{j}.XData;
+                        y_ = handles.current_traces{j}.YData;
+                        z_ = handles.current_traces{j}.ZData;
+
+                        xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+
+                        
+                        handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
+                        handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
+                        handles.current_traces{j}.ZData = xyz_(3);
+                    end
+                    obj_pos = ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+                        handles.current_traces{j}.YData = handles.current_traces{j}.YData + 0.05;
+                    end
                 else
                     obj_pos = ee(1:3, 4);
                     prev_pos = prev_ee(1:3, 4);
@@ -327,14 +332,13 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
                  ; cubePoints * rotz(3*pi/2) ...
                  ; cubePoints * roty(pi/2) ...
                  ; cubePoints * roty(-pi/2)];         
-         
-    % Plot the cube's point cloud         
-%     cubeAtOrigin_h = plot3(cubePoints(:,1), cubePoints(:,2), cubePoints(:,3), 'r.');
-
-
+    
     for s = 1 : length(qm1)
         q1 = qm1(s, :);
+        m1.animate(q1);
+
         q2 = qm2(s, :);
+        m2.animate(q2);
         
         tr1 = zeros(4, 4, m1.n + 1);
         tr2 = zeros(4, 4, m2.n + 1);
@@ -347,6 +351,8 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
 
         for i = 1 : m1.n
             tr1(:, :, i+1) = tr1(:, :, i) * trotz(q1(i)) * transl(0,0,L1(i).d) * transl(L1(i).a,0,0) * trotx(L1(i).alpha);
+        end
+        for i = 1 : m2.n
             tr2(:, :, i+1) = tr2(:, :, i) * trotz(q2(i)) * transl(0,0,L2(i).d) * transl(L2(i).a,0,0) * trotx(L2(i).alpha);
         end
 
@@ -356,8 +362,10 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
             updatedCubePoints = cubePointsAndOnes(:, 1:3);
             algebraicDist = GetAlgebraicDist(updatedCubePoints, tr1(1:3, 4, i)', radii);
             pointsInside = find(algebraicDist < 1);
-%             disp(['There are ', num2str(size(pointsInside,1)),' points inside the ', num2str(i),'th ellipsoid']);
-        end
+            if size(pointsInside, 1) ~= 0
+                disp(['There are ', num2str(size(pointsInside,1)),' points inside the ', num2str(i),'th ellipsoid']);
+            end
+        end     
 
         % cubes from m1 in links of m2
         for i = 1 : size(tr2, 3)
@@ -365,7 +373,9 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
             updatedCubePoints = cubePointsAndOnes(:, 1:3);
             algebraicDist = GetAlgebraicDist(updatedCubePoints, tr2(1:3, 4, i)', radii);
             pointsInside = find(algebraicDist < 1);
-%             disp(['There are ', num2str(size(pointsInside,1)),' points inside the ', num2str(i),'th ellipsoid']);
+            if size(pointsInside, 1) ~= 0
+                disp(['There are ', num2str(size(pointsInside,1)),' points inside the ', num2str(i),'th ellipsoid']);
+            end
         end
     end
         
@@ -391,7 +401,7 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs = zeros(4, 4, 8);
         tfs(:, :, 1) = transl(-0.02, 0.05, 0.005);
 
-        tfs(:, :, 2) = transl(0.05, 0, 0);
+        tfs(:, :, 2) = transl(0.045, 0, 0);
         tfs(:, :, 3) = transl(-0.045, -0.02, 0);
         tfs(:, :, 4) = transl(0, -0.02, 0);
         tfs(:, :, 5) = transl(0.045, 0.02, 0);
@@ -399,8 +409,8 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 6) = transl(0, -0.02, 0);
         tfs(:, :, 7) = transl(0, -0.02, 0);
         tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
+        tfs(:, :, 9) = transl(0, -0.25, 0);
         
-%         tfs(:, :, 3) = transl(-0.1, -0.1, 0);
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
@@ -408,7 +418,10 @@ function [handles] = trace_path(handles, obj, model, plot)
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-
+            elseif i == 9
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8);
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
@@ -416,7 +429,7 @@ function [handles] = trace_path(handles, obj, model, plot)
         end
 
     elseif obj.type == 2 % More complex shape
-        tfs = zeros(4, 4, 13);
+        tfs = zeros(4, 4, 20);
 
         tfs(:, :, 1) = transl(0.04, 0.03, 0.005);
 
@@ -435,25 +448,28 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 11) = transl(0, -0.01, 0);
         tfs(:, :, 12) = transl(-0.07, 0, 0);
 
-%         tfs(:, :, 13) = transl(0.09, -0.06, 0);
-%         tfs(:, :, 14) = transl(-0.09, 0.02, 0);
-%         tfs(:, :, 15) = transl(0, 0.02, 0);
-% 
-%         tfs(:, :, 16) = transl(0.02, 0, 0);
-%         tfs(:, :, 17) = transl(0, -0.02, 0);
-%         tfs(:, :, 18) = transl(0.04, 0, 0);
-%         tfs(:, :, 19) = transl(0.02, 0, 0);
-%         
-        tfs(:, :, 13) = transl(-0.15, -0.15, 0);
+        tfs(:, :, 13) = transl(0.09, -0.06, 0);
+        tfs(:, :, 14) = transl(-0.09, 0.02, 0);
+        tfs(:, :, 15) = transl(0, 0.02, 0);
+
+        tfs(:, :, 16) = transl(0.02, 0, 0);
+        tfs(:, :, 17) = transl(0, -0.02, 0);
+        tfs(:, :, 18) = transl(0.04, 0, 0);
+        tfs(:, :, 19) = transl(0.02, 0, 0);
+
+        tfs(:, :, 20) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16 || i == 20
+            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-
+            elseif i == 20
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8)
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'm*');
@@ -478,14 +494,18 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 9) = transl(0.01, -0.01, 0);
 
         tfs(:, :, 10) = transl(0, -0.04, 0);
-        tfs(:, :, 11) = transl(-0.25, -0.15, 0);
+        tfs(:, :, 11) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10 || i == 11
+            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
+            elseif i == 11
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8)
             elseif i == 2
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.05);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
@@ -503,13 +523,10 @@ function [handles] = trace_path(handles, obj, model, plot)
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
             end
         end
-     end
-     
-     disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
-     if handles.exitbutton.UserData == 1, pause(1); closereq(); return; end
-%      pause(6);
-%      keyboard;
-
+    end
+    
+    disp(strcat(['e.    Completed trace path for PCB ', num2str(obj.type)]));
+    if handles.exitbutton.UserData == 1, pause(1); closereq(); return; end
     handles.current_traces = plt;
  
 
@@ -555,27 +572,31 @@ if isfield(handles,'r1')
         
         steps = 9;
         
-        if l > 3, break; end
         if handles.exitbutton.UserData == 1, break; end
-        
+        if l > 4, break; end
+
         if mod(i, steps * l) == 0
             l = l + 1;
+        elseif l == 4 && mod(i, steps) == 1
+            break;
         else
             handles = sequences(i, steps, handles);
             guidata(hObject, handles);
             i = i + 1;
         end
     end
-    
+    disp('')
+    disp('_____________________________')
+    disp('... Completed Trace Paths ...')
+    disp('_____________________________')
     if handles.exitbutton.UserData == 1
         disp('Returning out of sim start')
         closereq();
         %     return;
     end
 else
-    errordlg('Please load the map and assets first','Asset error');
+    errordlg('Please load the map and assets first', 'Asset error');
 end
-
 
 
 function [handles] = sequences(i, steps, handles)
@@ -677,7 +698,7 @@ if handles.estop.Value == 1
     set(handles.stoptext, 'Visible','on');
     set(handles.stoptext, 'BackgroundColor','red');
     disp('EStop engaged')
-    pt = 0.5;
+    pt = 0.7;
     while 1
         disp('awaiting input . . .');
         
@@ -745,7 +766,10 @@ if handles.exitbutton.Value == 1
     if handles.simstarter.UserData == 0, closereq(); end
     try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
 end
-    
+
+
+
+
 %
 % 6. Hardware Estop
 %
@@ -800,6 +824,9 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
+
+
 %
 % 7. Teach Buttons
 % 
@@ -811,6 +838,7 @@ handles.radiobutton2.Value = 0;
 handles.robot = handles.r1;
 update_strings(hObject,handles)
 disp('Teach Panel switched to Robot 1')
+plot
 
 
 % --- Executes on button press in radiobutton2.
@@ -819,6 +847,35 @@ handles.radiobutton1.Value = 0;
 handles.robot = handles.r2;
 update_strings(hObject,handles)
 disp('Teach Panel switched to Robot 2')
+
+
+function forcedCol_Callback(hObject, eventdata, handles)
+if handles.simstarter.UserData == 1
+    disp('Please stop the simulation first');
+else
+
+    disp('Moving into Scenarios where both robots move to avoid a collision')
+    handles.r1.model.animate([0 pi/4 pi/2 pi/4 0])
+    handles.r2.model.animate([0 pi/4 pi/2 pi/4 0])
+
+    disp('Scenario 1: Transporter intercept laser')
+    handles.r1.model.animate([pi/8 pi/4 pi/2 pi/4 0]) % start
+    handles.r2.model.animate([-pi/2 pi/4 pi/2 pi/4 0]) % start
+
+    dest1 = transl(0, -0.5, 0.5);
+    [qmatrix1, desired1] = rmrc(handles.r1.model.fkine(handles.r1.model.getpos), dest1, handles.r1.model.getpos, handles.r1.model, false, 1, false); 
+    plt1 = plot3(desired1(1, :), desired1(2, :), desired1(3, :), 'm*');
+
+    dest2 = transl(-0.12, -0.5, 0.5);
+    [qmatrix2, desired2] = rmrc(handles.r2.model.fkine(handles.r2.model.getpos), dest2, handles.r2.model.getpos, handles.r2.model, false, 1, false); 
+    plt2 = plot3(desired2(1, :), desired2(2, :), desired2(3, :), 'g*');
+
+    [qm1, qm2] = collision_detection(qmatrix1, handles.r1.model, qmatrix2, handles.r2.model, true);
+    
+    plt2 = plot3(desired2(1, :), desired2(2, :), desired2(3, :), 'c*');
+    disp('')
+end
+
 
 
 % Q's
