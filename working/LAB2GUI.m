@@ -119,7 +119,7 @@ axis equal
 
 pcbs = [];
 pcbs{1} = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
-pcbs{2} = PCB(2, transl(-0.34, 0.3, handles.h) * trotz(pi));
+pcbs{2} = PCB(2, transl(-0.335, 0.3, handles.h) * trotz(pi));
 pcbs{3} = PCB(3, transl(-0.33, 0.6, handles.h));
 
 view([0 0 1]);
@@ -199,9 +199,14 @@ function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot,
 
                         xyz_ = inv(init_rot) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
 
+                        
                         handles.current_traces{j}.XData = obj_pos(1) - xyz_(1);
                         handles.current_traces{j}.YData = obj_pos(2) - xyz_(2);
                         handles.current_traces{j}.ZData = xyz_(3);
+                    end
+                    obj_pos = ee(1:3, 4);
+                    for j=1:length(handles.current_traces)
+                        handles.current_traces{j}.YData = handles.current_traces{j}.YData + 0.05;
                     end
                 else
                     obj_pos = ee(1:3, 4);
@@ -396,7 +401,7 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs = zeros(4, 4, 8);
         tfs(:, :, 1) = transl(-0.02, 0.05, 0.005);
 
-        tfs(:, :, 2) = transl(0.05, 0, 0);
+        tfs(:, :, 2) = transl(0.045, 0, 0);
         tfs(:, :, 3) = transl(-0.045, -0.02, 0);
         tfs(:, :, 4) = transl(0, -0.02, 0);
         tfs(:, :, 5) = transl(0.045, 0.02, 0);
@@ -404,8 +409,8 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 6) = transl(0, -0.02, 0);
         tfs(:, :, 7) = transl(0, -0.02, 0);
         tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
+        tfs(:, :, 9) = transl(0, -0.25, 0);
         
-%         tfs(:, :, 3) = transl(-0.1, -0.1, 0);
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
@@ -413,7 +418,10 @@ function [handles] = trace_path(handles, obj, model, plot)
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-
+            elseif i == 9
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8);
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
@@ -421,7 +429,7 @@ function [handles] = trace_path(handles, obj, model, plot)
         end
 
     elseif obj.type == 2 % More complex shape
-        tfs = zeros(4, 4, 13);
+        tfs = zeros(4, 4, 20);
 
         tfs(:, :, 1) = transl(0.04, 0.03, 0.005);
 
@@ -440,25 +448,28 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 11) = transl(0, -0.01, 0);
         tfs(:, :, 12) = transl(-0.07, 0, 0);
 
-%         tfs(:, :, 13) = transl(0.09, -0.06, 0);
-%         tfs(:, :, 14) = transl(-0.09, 0.02, 0);
-%         tfs(:, :, 15) = transl(0, 0.02, 0);
-% 
-%         tfs(:, :, 16) = transl(0.02, 0, 0);
-%         tfs(:, :, 17) = transl(0, -0.02, 0);
-%         tfs(:, :, 18) = transl(0.04, 0, 0);
-%         tfs(:, :, 19) = transl(0.02, 0, 0);
-%         
-        tfs(:, :, 13) = transl(-0.15, -0.15, 0);
+        tfs(:, :, 13) = transl(0.09, -0.06, 0);
+        tfs(:, :, 14) = transl(-0.09, 0.02, 0);
+        tfs(:, :, 15) = transl(0, 0.02, 0);
+
+        tfs(:, :, 16) = transl(0.02, 0, 0);
+        tfs(:, :, 17) = transl(0, -0.02, 0);
+        tfs(:, :, 18) = transl(0.04, 0, 0);
+        tfs(:, :, 19) = transl(0.02, 0, 0);
+
+        tfs(:, :, 20) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16 || i == 20
+            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-
+            elseif i == 20
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8)
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'm*');
@@ -483,14 +494,18 @@ function [handles] = trace_path(handles, obj, model, plot)
         tfs(:, :, 9) = transl(0.01, -0.01, 0);
 
         tfs(:, :, 10) = transl(0, -0.04, 0);
-        tfs(:, :, 11) = transl(-0.25, -0.15, 0);
+        tfs(:, :, 11) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10 || i == 11
+            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
+            elseif i == 11
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+                plt = loop_qmatrix(qmatrix, model, plt, false, false);
+                pause(0.8)
             elseif i == 2
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.05);
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
@@ -508,13 +523,10 @@ function [handles] = trace_path(handles, obj, model, plot)
                 plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
             end
         end
-     end
-     
-     disp(strcat(['    Completed trace path for PCB ', num2str(obj.type)]));
-     if handles.exitbutton.UserData == 1, pause(1); closereq(); return; end
-%      pause(6);
-%      keyboard;
-
+    end
+    
+    disp(strcat(['e.    Completed trace path for PCB ', num2str(obj.type)]));
+    if handles.exitbutton.UserData == 1, pause(1); closereq(); return; end
     handles.current_traces = plt;
  
 
@@ -573,8 +585,10 @@ if isfield(handles,'r1')
             i = i + 1;
         end
     end
-    
-    disp('Completed Trace Paths')
+    disp('')
+    disp('_____________________________')
+    disp('... Completed Trace Paths ...')
+    disp('_____________________________')
     if handles.exitbutton.UserData == 1
         disp('Returning out of sim start')
         closereq();
@@ -684,7 +698,7 @@ if handles.estop.Value == 1
     set(handles.stoptext, 'Visible','on');
     set(handles.stoptext, 'BackgroundColor','red');
     disp('EStop engaged')
-    pt = 0.5;
+    pt = 0.7;
     while 1
         disp('awaiting input . . .');
         
@@ -752,7 +766,10 @@ if handles.exitbutton.Value == 1
     if handles.simstarter.UserData == 0, closereq(); end
     try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
 end
-    
+
+
+
+
 %
 % 6. Hardware Estop
 %
@@ -806,6 +823,9 @@ function path_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
 
 %
 % 7. Teach Buttons
