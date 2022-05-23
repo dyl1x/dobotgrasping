@@ -118,6 +118,7 @@ drawnow();
 axis equal
 
 pcbs = [];
+
 pcbs{1} = PCB(1, transl(-0.33, 0, handles.h) * trotz(pi/2));
 pcbs{2} = PCB(2, transl(-0.335, 0.3, handles.h) * trotz(pi));
 pcbs{3} = PCB(3, transl(-0.33, 0.6, handles.h));
@@ -150,46 +151,45 @@ guidata(hObject,handles);
 
 function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot, move_ply)
     if ~exist('pt', 'var'), pt = handles.pt; end
+    dt = 0.05;
 
     if move_ply == true
         % make sure ee rot aligns with obj.pose
-        [qmatrix, desired] = rmrc(model.fkine(model.getpos), obj.pose, model.getpos, model, false, path, weight);
+        [qmatrix, desired] = rmrc(model.fkine(model.getpos), obj.pose, model.getpos, model, false, path, weight, model.n, dt);
         for i=1:length(qmatrix) model.animate(qmatrix(i, :)); end
     end
 
-    [qmatrix, desired] = rmrc(model.fkine(model.getpos), dest, model.getpos, model, false, path, weight); 
+    [qmatrix, desired] = rmrc(model.fkine(model.getpos), dest, model.getpos, model, false, path, weight, model.n, dt); 
     
     % animate the model
     if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % pl
     for i=1:length(qmatrix)
         model.animate(qmatrix(i, :));
         ee = model.fkine(qmatrix(i, :));
-        if i == 1, prev_ee = [eye(3), ee(1:3, 4); zeros(1, 3), 1]; else, prev_ee = model.fkine(qmatrix(i-1, :)); end
+        if i == 1, prev_ee = [eye(3), ee(1:3, 4); zeros(1, 3), 1]; end
 
         if plot == true, plot3(ee(1, 4), ee(2, 4), ee(3, 4), 'b*'); end
         if move_ply == true, old_rot = obj.pose; obj.MoveMesh(ee);
             
             % animate trace movement
             if ~isempty(handles.current_traces)
-                if i == 1
+                if i == 1 % initial transform from ws to end effector
                     init_rot = ee(1:3, 1:3);
-                    rpy = tr2rpy(init_rot);
                     obj_pos = old_rot(1:3, 4);
-                    for j=1:length(handles.current_traces)
+                    for j=1:length(handles.current_traces) % loop through points
 
                         x_ = handles.current_traces{j}.XData;
                         y_ = handles.current_traces{j}.YData;
                         z_ = handles.current_traces{j}.ZData;
 
-                        
-                        xyz_ = init_rot * rotz(pi/2) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]';
+                        xyz_ = init_rot * rotz(pi/2) * [x_ - obj_pos(1), y_ - obj_pos(2), z_]'; % ee rot * diff between point and obj centre
 
                         handles.current_traces{j}.XData = obj_pos(1) + xyz_(1);
                         handles.current_traces{j}.YData = obj_pos(2) + xyz_(2);
                         handles.current_traces{j}.ZData = xyz_(3);
 
                     end
-                elseif i == length(qmatrix)
+                elseif i == length(qmatrix) % last step, invert initial rotation
                     obj_pos = ee(1:3, 4);
                     for j=1:length(handles.current_traces)
 
@@ -205,25 +205,25 @@ function [handles] = animate_traj(handles, dest, model, obj, path, weight, plot,
                         handles.current_traces{j}.ZData = xyz_(3);
                     end
                     obj_pos = ee(1:3, 4);
-                    for j=1:length(handles.current_traces)
-                        handles.current_traces{j}.YData = handles.current_traces{j}.YData + 0.05;
-                    end
+
                 else
                     obj_pos = ee(1:3, 4);
                     prev_pos = prev_ee(1:3, 4);
+
                     for j=1:length(handles.current_traces)
                         x_ = handles.current_traces{j}.XData;
                         y_ = handles.current_traces{j}.YData;
                         z_ = handles.current_traces{j}.ZData;
-                        rot = ee(1:3, 1:3);
-                        xyz_ = rot * [obj_pos(1) - prev_pos(1), obj_pos(2) - prev_pos(2), z_]';
-%                         disp(xyz_);
-                        handles.current_traces{j}.XData = x_ - xyz_(1);
-                        handles.current_traces{j}.YData = y_ - xyz_(2);
-                        handles.current_traces{j}.ZData = xyz_(3);
+                        
+                        
+                        xyz_ = [obj_pos(1) - prev_pos(1), obj_pos(2) - prev_pos(2), z_]'; % error between subsequent ee pos
+
+                        handles.current_traces{j}.XData = x_ + xyz_(1); % previous pos - transformed point 
+                        handles.current_traces{j}.YData = y_ + xyz_(2);
+                        handles.current_traces{j}.ZData = xyz_(3); % z is constant
                     end
+                    prev_ee = ee;
                 end
-%                 pause(0.5);
             end
         end
         pause(pt);
@@ -394,133 +394,222 @@ function [qm1, qm2] = collision_detection(qm1, m1, qm2, m2, plot)
 
 function [handles] = trace_path(handles, obj, model, plot)
     if ~exist('pt', 'var'), pt = handles.tpt; end
-
+    
+    marker_size = 0.01;
+    tp = 0.05; % 1/0.01 = 100
     plt = [];
-     if obj.type == 1
+
+    if obj.type == 1
         
-        tfs = zeros(4, 4, 8);
-        tfs(:, :, 1) = transl(-0.02, 0.05, 0.005);
+        tfs = zeros(4, 4, 1);
+        tfs(:, :, 1) = transl(-0.025, 0.09, 0.005);
+        
+        tfs(:, :, 2) = transl(0, -0.0001, 0); % x-ve
 
-        tfs(:, :, 2) = transl(0.045, 0, 0);
-        tfs(:, :, 3) = transl(-0.045, -0.02, 0);
-        tfs(:, :, 4) = transl(0, -0.02, 0);
-        tfs(:, :, 5) = transl(0.045, 0.02, 0);
+        tfs(:, :, 3) = transl(0.04, 0, 0);
+        tfs(:, :, 4) = transl(0, -0.04, 0);
 
-        tfs(:, :, 6) = transl(0, -0.02, 0);
-        tfs(:, :, 7) = transl(0, -0.02, 0);
-        tfs(:, :, 8) = transl(-0.035, -0.0175, 0);
-        tfs(:, :, 9) = transl(0, -0.25, 0);
+        tfs(:, :, 5) = transl(0.008, 0, 0); % y-ve
+
+        tfs(:, :, 6) = transl(0, 0.044, 0);
+        tfs(:, :, 7) = transl(-0.043, 0, 0);
+
+        tfs(:, :, 8) = transl(0.01, -0.05, 0); % Move
+
+        tfs(:, :, 9) = transl(0, -0.0005, 0); % x-ve
+        tfs(:, :, 10) = transl(-0.01, 0, 0);
+        tfs(:, :, 11) = transl(0, 0.02, 0);
+        tfs(:, :, 12) = transl(0.03, 0, 0);
+        tfs(:, :, 13) = transl(0, -0.018, 0);
+
+        tfs(:, :, 14) = transl(0.008, 0, 0); % y-ve
+        tfs(:, :, 15) = transl(0, 0.022, 0);
+        tfs(:, :, 16) = transl(-0.037, 0, 0);
+        tfs(:, :, 17) = transl(0, -0.028, 0);
+        tfs(:, :, 18) = transl(0.015, 0, 0);
+
+        tfs(:, :, 19) = transl(-0.01, -0.02, 0);
+        tfs(:, :, 20) = transl(-0.008, 0, 0);
+        tfs(:, :, 21) = transl(0, -0.025, 0);
+        tfs(:, :, 22) = transl(0.03, -0.03, 0);
+        tfs(:, :, 23) = transl(0.02, 0, 0);
+        tfs(:, :, 24) = transl(0, 0.0005, 0);
+
+        tfs(:, :, 25) = transl(-0.02, 0, 0);
+        tfs(:, :, 26) = transl(-0.027, 0.03, 0);
+        tfs(:, :, 27) = transl(0, 0.02, 0);
+
+        tfs(:, :, 28) = transl(0.01, 0, 0);
+        tfs(:, :, 29) = transl(-0.008, 0, 0);
+        tfs(:, :, 30) = transl(0, -0.02, 0);
+        tfs(:, :, 31) = transl(0.025, -0.025, 0);
+        tfs(:, :, 32) = transl(0.015, 0, 0);
+        tfs(:, :, 33) = transl(0, 0.0005, 0);
+        tfs(:, :, 34) = transl(-0.015, 0, 0);
+        tfs(:, :, 35) = transl(-0.022, 0.02, 0);
+        tfs(:, :, 36) = transl(0, 0.02, 0);
+
+        tfs(:, :, 37) = transl(0, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 || i == 3
+            if i == 1 || i == 8 || i == 19 || i == 28
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-            elseif i == 9
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
+            elseif i == length(tfs)
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false, model.n);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 pause(0.8);
+            elseif i == 2 % x vertical -ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, -0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*', marker_size);
+            elseif i == 9 || i == 24 || i == 33% x vertical +ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, 0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*', marker_size);
+            elseif i == 5 || i == 14 % y horizontal -ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 8, -0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*', marker_size);
+            elseif i == 20 || i == 29 % y horizontal +ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 8, 0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*', marker_size);
             else
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*');
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'c*', marker_size);
             end
         end
 
     elseif obj.type == 2 % More complex shape
-        tfs = zeros(4, 4, 20);
+        tfs = zeros(4, 4, 1);
 
         tfs(:, :, 1) = transl(0.04, 0.03, 0.005);
+        tfs(:, :, 2) = transl(0, -0.0001, 0);
+        
+        tfs(:, :, 3) = transl(-0.05, 0, 0);
+        tfs(:, :, 4) = transl(0, -0.025, 0);
+        tfs(:, :, 5) = transl(-0.055, 0, 0);
 
-        tfs(:, :, 2) = transl(-0.05, 0, 0);
-        tfs(:, :, 3) = transl(0, -0.02, 0);
-        tfs(:, :, 4) = transl(-0.05, 0, 0);
+        tfs(:, :, 6) = transl(0, -0.0001, 0);
 
-        tfs(:, :, 5) = transl(0, -0.01, 0);
+        tfs(:, :, 7) = transl(0.06, 0, 0);
+        tfs(:, :, 8) = transl(0, 0.025, 0);
+        tfs(:, :, 9) = transl(0.045, 0, 0);
 
-        tfs(:, :, 6) = transl(0.06, 0, 0);
-        tfs(:, :, 7) = transl(0, 0.015, 0);
-        tfs(:, :, 8) = transl(0.02, 0, 0);
+        tfs(:, :, 10) = transl(0, -0.0075, 0);
 
-        tfs(:, :, 9) = transl(0, -0.015, 0);
-        tfs(:, :, 10) = transl(-0.01, 0, 0);
-        tfs(:, :, 11) = transl(0, -0.01, 0);
-        tfs(:, :, 12) = transl(-0.07, 0, 0);
+        tfs(:, :, 11) = transl(0, -0.0001, 0);
+        tfs(:, :, 12) = transl(-0.04, 0, 0);
+        tfs(:, :, 13) = transl(0, -0.025, 0);
+        tfs(:, :, 14) = transl(-0.0625, 0, 0);
+        tfs(:, :, 15) = transl(0, -0.0001, 0);
+        tfs(:, :, 16) = transl(0.0725, 0, 0);
+        tfs(:, :, 17) = transl(0, 0.025, 0);
+        tfs(:, :, 18) = transl(0.03, 0, 0);
+        
+%         tfs(:, :, 1) = transl(-0.01, 0, 0);
+%         tfs(:, :, 12) = transl(0, -0.01, 0);
+%         tfs(:, :, 13) = transl(-0.07, 0, 0);
+% 
+%         tfs(:, :, 14) = transl(0.09, -0.06, 0);
+%         tfs(:, :, 15) = transl(-0.09, 0.02, 0);
+%         tfs(:, :, 16) = transl(0, 0.02, 0);
+% 
+%         tfs(:, :, 17) = transl(0.02, 0, 0);
+%         tfs(:, :, 18) = transl(0, -0.02, 0);
+%         tfs(:, :, 19) = transl(0.04, 0, 0);
+%         tfs(:, :, 20) = transl(0.02, 0, 0);
 
-        tfs(:, :, 13) = transl(0.09, -0.06, 0);
-        tfs(:, :, 14) = transl(-0.09, 0.02, 0);
-        tfs(:, :, 15) = transl(0, 0.02, 0);
-
-        tfs(:, :, 16) = transl(0.02, 0, 0);
-        tfs(:, :, 17) = transl(0, -0.02, 0);
-        tfs(:, :, 18) = transl(0.04, 0, 0);
-        tfs(:, :, 19) = transl(0.02, 0, 0);
-
-        tfs(:, :, 20) = transl(-0.05, -0.25, 0);
+        tfs(:, :, 19) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 || i == 5 ||i == 9 || i == 13 || i == 16
+            if i == 1 || i == 10
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 % if plot == true, plot3(desired(1, :), desired(2, :), desired(3, :), 'y.', 'LineWidth', 1); end % plot
-            elseif i == 20
+            elseif i == length(tfs)
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 pause(0.8)
+            elseif i == 2 || i == 11% x vertical +ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, 0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*', marker_size);
+            elseif i == 6 || i == 15 % x vertical -ve
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, -0.0015, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*', marker_size);
+            
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'm*');
+                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*', 0.05);
             end
         end
 
     elseif obj.type == 3 % Circular shape
-
+        
         tfs = zeros(4, 4, 7);
         tfs(:, :, 1) = transl(-0.045, 0.05, 0.005);
+        
+        curv = 0.0025;
+        lc = 0.1;
+        sc = lc - 2 * curv;
+        rc = lc - 0.04;
+        
+        left_weight = -0.05;
+        right_weight = 0.00425;
 
-        tfs(:, :, 2) = transl(0.1, -0.1, 0);
-        tfs(:, :, 3) = transl(-0.01, 0.01, 0);
+        tfs(:, :, 2) = transl(lc, -lc, 0);
+        tfs(:, :, 3) = transl(-curv, curv, 0);
 
-        tfs(:, :, 4) = transl(-0.08, 0.08, 0);
-        tfs(:, :, 5) = transl(0.01, -0.01, 0);
+        tfs(:, :, 4) = transl(-sc, sc, 0);
+        tfs(:, :, 5) = transl(-curv, curv, 0);
 
-        tfs(:, :, 6) = transl(0.06, -0.06, 0);
-        tfs(:, :, 7) = transl(-0.01, 0.01, 0);
+        tfs(:, :, 6) = transl(0.05, 0, 0);
 
-        tfs(:, :, 8) = transl(-0.04, 0.04, 0);
-        tfs(:, :, 9) = transl(0.01, -0.01, 0);
+        tfs(:, :, 7) = transl(0, -rc, 0);
+        tfs(:, :, 8) = transl(0, -curv, 0);
 
-        tfs(:, :, 10) = transl(0, -0.04, 0);
-        tfs(:, :, 11) = transl(-0.05, -0.25, 0);
+        tfs(:, :, 9) = transl(0, rc-0.018, 0);
+        tfs(:, :, 10) = transl(0, -curv, 0);
+
+        tfs(:, :, 11) = transl(0, -0.04, 0);
+        tfs(:, :, 12) = transl(-0.05, -0.25, 0);
         
         l = size(tfs);
+        ls = 'c*';
         for i=1:l(3)
             cp = model.fkine(model.getpos);
-            if i == 1 ||  i == 3 || i == 5 || i == 7 || i == 9 || i == 10
+            if i==1 || i==6 || i==11 || i==12
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
-            elseif i == 11
+            elseif i == length(tfs)
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
                 plt = loop_qmatrix(qmatrix, model, plt, false, false);
                 pause(0.8)
             elseif i == 2
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.05);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, left_weight, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
             elseif i == 4
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, 0.05);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
-            elseif i == 6
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, -0.025);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
-            elseif i == 8
-                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, 0.025);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, left_weight + curv, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
+            
+            elseif i == 3 || i == 5
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 4, 0.0025, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
+            elseif i == 8 || i == 10
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, -0.0008, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
+            
+            elseif i == 7
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, right_weight, model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
+            elseif i == 9
+                [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 7, right_weight + (curv/3), model.n, tp);
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
             else
                 [qmatrix, desired] = rmrc(cp, cp + tfs(:, :, i), model.getpos, model, false, 1, false);
-                plt = loop_qmatrix(qmatrix, model, plt, true, 'g*');
+                plt = loop_qmatrix(qmatrix, model, plt, true, ls);
             end
         end
     end
@@ -530,15 +619,16 @@ function [handles] = trace_path(handles, obj, model, plot)
     handles.current_traces = plt;
  
 
-function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec)
+function plots = loop_qmatrix(qmatrix, model, plots, plot, linespec, ms)
     if ~exist('linespec', 'var'), linespec = 'b*'; end
     if ~exist('pt', 'var'),  pt = 0.005; end
+    if ~exist('ms', 'var'), ms = 0.1; end
 
     for i=1:length(qmatrix)
            model.animate(qmatrix(i, :));
            ee = model.fkine(qmatrix(i, :));
            if plot == true
-               plt = plot3(ee(1, 4), ee(2, 4), ee(3, 4), linespec, 'MarkerSize', 0.1); 
+               plt = plot3(ee(1, 4), ee(2, 4), ee(3, 4), linespec, 'MarkerSize', ms); 
                plots{length(plots)+1} = plt;
            end
            pause(pt);
@@ -743,6 +833,7 @@ if handles.exitbutton.Value == 1
     try if handles.simstarter.UserData == 1, closereq(); end; catch e; end
 end
 
+
 % --- Executes on button press in exitbutton.
 function exitbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to exitbutton (see GCBO)
@@ -838,7 +929,7 @@ handles.radiobutton2.Value = 0;
 handles.robot = handles.r1;
 update_strings(hObject,handles)
 disp('Teach Panel switched to Robot 1')
-plot
+
 
 
 % --- Executes on button press in radiobutton2.
